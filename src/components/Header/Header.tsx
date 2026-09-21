@@ -10,7 +10,13 @@ const navigation = [
   { label: 'Մեր մասին', href: '#about' },
 ];
 
-function Header() {
+interface HeaderProps {
+  onLoginClick?: () => void;
+  onRegisterClick?: () => void;
+  onHomeClick?: () => void;
+}
+
+function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuId = useId();
@@ -29,7 +35,7 @@ function Header() {
   useEffect(() => {
     if (!isMenuOpen) return undefined;
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsMenuOpen(false);
       }
@@ -95,37 +101,45 @@ function Header() {
           </nav>
 
           <div className="buttonsBox buttonsBox--mobile">
-            <a
+            <button
+              type="button"
               className="appHeader__button appHeader__button--outline"
-              href="#login"
-              onClick={closeMenu}
+              onClick={() => {
+                closeMenu();
+                onLoginClick?.();
+              }}
             >
               Մուտք գործել
-            </a>
-            <a
+            </button>
+            <button
+              type="button"
               className="appHeader__button appHeader__button--filled"
-              href="#register"
-              onClick={closeMenu}
+              onClick={() => {
+                closeMenu();
+                onRegisterClick?.();
+              }}
             >
               Գրանցվել
-            </a>
+            </button>
           </div>
         </div>
 
-        {/*<div className="buttonsBox buttonsBox--desktop">*/}
-          {/*<a*/}
-          {/*  className="appHeader__button appHeader__button--outline"*/}
-          {/*  href="#login"*/}
-          {/*>*/}
-          {/*  Մուտք գործել*/}
-          {/*</a>*/}
-          {/*<a*/}
-          {/*  className="appHeader__button appHeader__button--filled"*/}
-          {/*  href="#register"*/}
-          {/*>*/}
-          {/*  Գրանցվել*/}
-          {/*</a>*/}
-        {/*</div>*/}
+        <div className="buttonsBox buttonsBox--desktop">
+          <button
+            type="button"
+            className="appHeader__button appHeader__button--outline"
+            onClick={() => onLoginClick?.()}
+          >
+            Մուտք գործել
+          </button>
+          <button
+            type="button"
+            className="appHeader__button appHeader__button--filled"
+            onClick={() => onRegisterClick?.()}
+          >
+            Գրանցվել
+          </button>
+        </div>
 
         <button
           className="appHeader__burger"
