@@ -1,10 +1,8 @@
-import * as React from 'react';
+import type { SVGProps } from 'react';
 
-export const GooglePlayIcon = ({
-  width = 27,
-  height = 27,
-  ...props
-}) => (
+type GooglePlayIconProps = SVGProps<SVGSVGElement>;
+
+export const GooglePlayIcon = ({ width = 27, height = 27, ...props }: GooglePlayIconProps) => (
   <svg
     width={width}
     height={height}

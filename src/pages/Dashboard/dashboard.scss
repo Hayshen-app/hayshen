@@ -1,0 +1,51 @@
+$green: #275231;
+
+.dashboard {
+  display: flex;
+  justify-content: center;
+  padding: clamp(48px, 8vw, 96px) 24px;
+  min-height: 60vh;
+  background: #fff;
+
+  &__card {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    color: #111;
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 700;
+  }
+
+  &__role {
+    display: inline-block;
+    margin-bottom: 24px;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: rgba($green, 0.1);
+    color: $green;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__status {
+    margin: 0 0 24px;
+    color: #555;
+    font-size: 14px;
+  }
+
+  &__logout {
+    padding: 12px 28px;
+    border: 1px solid $green;
+    border-radius: 999px;
+    background: transparent;
+    color: $green;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}

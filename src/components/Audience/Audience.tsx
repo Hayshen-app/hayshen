@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   BadgeCheck,
   Handshake,
   HardHat,

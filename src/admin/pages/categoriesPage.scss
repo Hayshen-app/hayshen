@@ -1,0 +1,66 @@
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-card {
+  padding: 16px 18px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: inherit;
+  }
+
+  &__name {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__description {
+    margin: 10px 0 0;
+    color: #666;
+    font-size: 13px;
+  }
+
+  &__services {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #eee;
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+  }
+}

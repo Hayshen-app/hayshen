@@ -161,6 +161,8 @@ $green: #275231;
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
+    appearance: none;
+    cursor: pointer;
     transition:
       min-height 280ms ease,
       background-color 180ms ease,

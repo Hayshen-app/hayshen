@@ -1,11 +1,8 @@
-import * as React from 'react';
+import type { SVGProps } from 'react';
 
-export const AppleIcon = ({
-  width = 27,
-  height = 27,
-  color = '#000000',
-  ...props
-}) => (
+type AppleIconProps = SVGProps<SVGSVGElement>;
+
+export const AppleIcon = ({ width = 27, height = 27, color = '#000000', ...props }: AppleIconProps) => (
   <svg
     width={width}
     height={height}

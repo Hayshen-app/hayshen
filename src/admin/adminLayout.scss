@@ -1,0 +1,49 @@
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f6f7f6;
+
+  &__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__content {
+    flex: 1;
+    padding: 24px 28px 48px;
+  }
+}
+
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 28px;
+  background: #fff;
+  border-bottom: 1px solid #e4e4e4;
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__role {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #275231;
+    font-weight: 700;
+    background: rgba(39, 82, 49, 0.1);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+}

@@ -1,0 +1,450 @@
+// Shared design tokens + utility classes for the Admin Console. Loaded once
+// from AdminLayout/AdminLogin so every admin page/component can rely on
+// these classes without re-declaring them.
+
+$admin-green: #275231;
+$admin-green-dark: #1b3a22;
+$admin-ink: #111;
+$admin-muted: #666;
+$admin-border: #e4e4e4;
+$admin-bg: #f6f7f6;
+$admin-danger: #c0392b;
+$admin-warning: #b8860b;
+$admin-info: #2563eb;
+$admin-success: #1e8e5a;
+
+.admin {
+  color: $admin-ink;
+  font-size: 14px;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  a {
+    color: $admin-green;
+    text-decoration: none;
+  }
+}
+
+// ---- Buttons -----------------------------------------------------------
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: $admin-green;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: $admin-green-dark;
+    }
+  }
+
+  &--secondary {
+    background: #fff;
+    border-color: $admin-border;
+    color: $admin-ink;
+
+    &:hover:not(:disabled) {
+      border-color: $admin-green;
+    }
+  }
+
+  &--danger {
+    background: #fff;
+    border-color: rgba($admin-danger, 0.4);
+    color: $admin-danger;
+
+    &:hover:not(:disabled) {
+      background: rgba($admin-danger, 0.06);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $admin-muted;
+
+    &:hover:not(:disabled) {
+      color: $admin-ink;
+    }
+  }
+
+  &--sm {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+// ---- Cards / page shell -------------------------------------------------
+
+.card {
+  background: #fff;
+  border: 1px solid $admin-border;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: $admin-muted;
+    font-size: 13px;
+  }
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  input,
+  select {
+    padding: 8px 12px;
+    border: 1px solid $admin-border;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    color: $admin-ink;
+
+    &:focus {
+      outline: 2px solid rgba($admin-green, 0.25);
+      border-color: $admin-green;
+    }
+  }
+}
+
+// ---- Badges --------------------------------------------------------------
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--neutral {
+    background: #eee;
+    color: #444;
+  }
+
+  &--info {
+    background: rgba($admin-info, 0.1);
+    color: $admin-info;
+  }
+
+  &--warning {
+    background: rgba($admin-warning, 0.12);
+    color: $admin-warning;
+  }
+
+  &--success {
+    background: rgba($admin-success, 0.12);
+    color: $admin-success;
+  }
+
+  &--danger {
+    background: rgba($admin-danger, 0.1);
+    color: $admin-danger;
+  }
+}
+
+// ---- Table -----------------------------------------------------------
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid $admin-border;
+  border-radius: 12px;
+  background: #fff;
+}
+
+table.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid $admin-border;
+    white-space: nowrap;
+  }
+
+  th {
+    background: $admin-bg;
+    color: $admin-muted;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: rgba($admin-green, 0.03);
+  }
+}
+
+.table-state {
+  padding: 40px 16px;
+  text-align: center;
+  color: $admin-muted;
+  font-size: 13px;
+}
+
+.table-state--error {
+  color: $admin-danger;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid $admin-border;
+  font-size: 13px;
+  color: $admin-muted;
+
+  button {
+    padding: 5px 10px;
+    border: 1px solid $admin-border;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: $admin-green;
+    }
+  }
+}
+
+// ---- Forms -----------------------------------------------------------
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+
+  label {
+    font-size: 13px;
+    font-weight: 600;
+    color: $admin-ink;
+  }
+
+  input,
+  select,
+  textarea {
+    padding: 10px 12px;
+    border: 1px solid $admin-border;
+    border-radius: 8px;
+    font-size: 14px;
+    color: $admin-ink;
+    background: #fff;
+    font-family: inherit;
+
+    &:focus {
+      outline: 2px solid rgba($admin-green, 0.25);
+      border-color: $admin-green;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 72px;
+  }
+
+  &__hint {
+    font-size: 12px;
+    color: $admin-muted;
+  }
+
+  &--checkbox {
+    flex-direction: row;
+    align-items: center;
+
+    label {
+      order: 2;
+    }
+
+    input {
+      order: 1;
+      width: auto;
+    }
+  }
+}
+
+.form-error {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba($admin-danger, 0.08);
+  color: $admin-danger;
+  font-size: 13px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+// ---- Stats -----------------------------------------------------------
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba($admin-green, 0.1);
+    color: $admin-green;
+    flex-shrink: 0;
+  }
+
+  &__value {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: $admin-muted;
+  }
+}
+
+// ---- Modal -----------------------------------------------------------
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 18px;
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: $admin-muted;
+    cursor: pointer;
+    padding: 2px;
+
+    &:hover {
+      color: $admin-ink;
+    }
+  }
+}
+
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: $admin-muted;
+  font-size: 13px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.detail-item {
+  &__label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $admin-muted;
+    margin-bottom: 4px;
+  }
+
+  &__value {
+    font-size: 14px;
+    color: $admin-ink;
+  }
+}
