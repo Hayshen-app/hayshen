@@ -91,7 +91,7 @@ function OrderDetailPage() {
                     key: 'companyRating',
                     header: 'Rating',
                     render: (bid) =>
-                      bid.companyRating === null ? '—' : `${bid.companyRating.toFixed(1)} (${bid.companyRatingCount})`,
+                      bid.companyRating == null ? '—' : `${bid.companyRating.toFixed(1)} (${bid.companyRatingCount})`,
                   },
                   { key: 'price', header: 'Price', render: (bid) => formatCurrency(bid.price) },
                   {
