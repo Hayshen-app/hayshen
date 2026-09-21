@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { buildQuery, useAuthorizedRequest } from '@/admin/api/http';
-import type { AdminAssignOrderRequest, OrderResponse, OrderSummaryResponse } from '@/admin/types';
+import type { AdminAssignOrderRequest, OrderBidResponse, OrderResponse, OrderSummaryResponse } from '@/admin/types';
 import type { PageResponse } from '@/types/api';
 import type { OrderStatus } from '@/types/enums';
 
@@ -24,6 +24,15 @@ export function useOrder(id: string | number | undefined) {
   return useQuery({
     queryKey: ['admin', 'order', String(id)],
     queryFn: () => request<OrderResponse>(`/admin/orders/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useOrderBids(id: string | number | undefined) {
+  const request = useAuthorizedRequest();
+  return useQuery({
+    queryKey: ['admin', 'order', String(id), 'bids'],
+    queryFn: () => request<OrderBidResponse[]>(`/admin/orders/${id}/bids`),
     enabled: Boolean(id),
   });
 }
