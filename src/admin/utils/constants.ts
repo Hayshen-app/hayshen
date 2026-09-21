@@ -1,4 +1,4 @@
-import type { OrderStatus, UserRole, UserStatus, VerificationStatus } from '@/types/enums';
+import type { OrderBidStatus, OrderStatus, UserRole, UserStatus, VerificationStatus } from '@/types/enums';
 
 export const USER_ROLES: UserRole[] = ['CUSTOMER', 'CONTRACTOR', 'ADMIN', 'SUPPORT'];
 
@@ -73,6 +73,16 @@ export function verificationStatusTone(status: VerificationStatus): Tone {
 
 export function orderStatusTone(status: OrderStatus): Tone {
   return ORDER_STATUS_TONE[status] || 'neutral';
+}
+
+const ORDER_BID_STATUS_TONE: Record<OrderBidStatus, Tone> = {
+  PENDING: 'warning',
+  ACCEPTED: 'success',
+  REJECTED: 'danger',
+};
+
+export function orderBidStatusTone(status: OrderBidStatus): Tone {
+  return ORDER_BID_STATUS_TONE[status] || 'neutral';
 }
 
 export function humanize(value?: string | null): string {

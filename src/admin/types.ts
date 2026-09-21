@@ -1,4 +1,4 @@
-import type { OrderStatus, UserRole, UserStatus, VerificationStatus } from '@/types/enums';
+import type { OrderBidStatus, OrderStatus, UserRole, UserStatus, VerificationStatus } from '@/types/enums';
 
 /** Mirrors backend admin/dto/UserSummaryResponse. */
 export interface UserSummaryResponse {
@@ -115,6 +115,22 @@ export interface OrderResponse {
 
 export interface AdminAssignOrderRequest {
   companyId: number;
+}
+
+/** Mirrors backend order/dto/OrderBidResponse. */
+export interface OrderBidResponse {
+  id: number;
+  orderId: number;
+  companyId: number;
+  companyName: string;
+  companyRating: number | null;
+  companyRatingCount: number;
+  price: number;
+  estimatedDeliveryAt: string;
+  note: string | null;
+  status: OrderBidStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** Mirrors backend catalog/dto/CategoryResponse. */

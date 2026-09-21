@@ -15,3 +15,5 @@ export type OrderStatus =
   | 'IN_PROGRESS'
   | 'DONE'
   | 'CANCELLED';
+
+export type OrderBidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';

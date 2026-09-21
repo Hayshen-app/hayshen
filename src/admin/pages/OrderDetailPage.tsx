@@ -1,16 +1,18 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useOrder } from '@/admin/api/orders';
+import { useOrder, useOrderBids } from '@/admin/api/orders';
+import DataTable from '@/admin/components/DataTable';
 import StatusBadge from '@/admin/components/StatusBadge';
 import DispatchModal from '@/admin/pages/DispatchModal';
-import { DISPATCHABLE_ORDER_STATUSES, orderStatusTone } from '@/admin/utils/constants';
+import { DISPATCHABLE_ORDER_STATUSES, orderBidStatusTone, orderStatusTone } from '@/admin/utils/constants';
 import { formatCurrency, formatDateTime } from '@/admin/utils/format';
 import '@/admin/pages/orderDetailPage.scss';
 
 function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, isError, error } = useOrder(id);
+  const { data: bids, isLoading: bidsLoading, isError: bidsError } = useOrderBids(id);
   const [showDispatch, setShowDispatch] = useState(false);
 
   return (
@@ -78,6 +80,40 @@ function OrderDetailPage() {
                 <Detail label="Customer confirmed done" value={order.customerConfirmedDone ? 'Yes' : 'No'} />
                 <Detail label="Company confirmed done" value={order.companyConfirmedDone ? 'Yes' : 'No'} />
               </div>
+            </div>
+
+            <div className="card">
+              <h2 className="order-detail__section-title">Company bids</h2>
+              <DataTable
+                columns={[
+                  { key: 'companyName', header: 'Company' },
+                  {
+                    key: 'companyRating',
+                    header: 'Rating',
+                    render: (bid) =>
+                      bid.companyRating === null ? '—' : `${bid.companyRating.toFixed(1)} (${bid.companyRatingCount})`,
+                  },
+                  { key: 'price', header: 'Price', render: (bid) => formatCurrency(bid.price) },
+                  {
+                    key: 'estimatedDeliveryAt',
+                    header: 'Estimated delivery',
+                    render: (bid) => formatDateTime(bid.estimatedDeliveryAt),
+                  },
+                  { key: 'note', header: 'Note', render: (bid) => bid.note || '—' },
+                  {
+                    key: 'status',
+                    header: 'Status',
+                    render: (bid) => <StatusBadge status={bid.status} tone={orderBidStatusTone(bid.status)} />,
+                  },
+                  { key: 'createdAt', header: 'Placed at', render: (bid) => formatDateTime(bid.createdAt) },
+                ]}
+                rows={bids}
+                rowKey={(bid) => bid.id}
+                isLoading={bidsLoading}
+                isError={bidsError}
+                errorMessage="Failed to load bids."
+                emptyMessage="No bids placed on this order yet."
+              />
             </div>
 
             {(order.rejectReason || order.cancelReason) && (
