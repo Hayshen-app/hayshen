@@ -23,6 +23,7 @@ export interface CompanySummaryResponse {
   ownerEmail: string;
   ownerPhone: string;
   city: string;
+  logoUrl: string | null;
   verificationStatus: VerificationStatus;
   totalJobsCompleted: number;
   rating: number | null;
