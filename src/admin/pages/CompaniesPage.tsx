@@ -8,6 +8,24 @@ import { formatDateTime } from '@/admin/utils/format';
 import { ApiError } from '@/api/client';
 import type { CompanySummaryResponse } from '@/admin/types';
 import type { VerificationStatus } from '@/types/enums';
+import '@/admin/pages/companiesPage.scss';
+
+function CompanyLogo({ logoUrl, size = 'sm' }: { logoUrl: string | null; size?: 'sm' | 'lg' }) {
+  if (!logoUrl) {
+    return (
+      <div className={`company-logo company-logo--placeholder${size === 'lg' ? ' company-logo--large' : ''}`}>
+        No logo
+      </div>
+    );
+  }
+  return (
+    <img
+      className={`company-logo${size === 'lg' ? ' company-logo--large' : ''}`}
+      src={logoUrl}
+      alt="Logo"
+    />
+  );
+}
 
 function CompaniesPage() {
   const [status, setStatus] = useState<VerificationStatus | ''>('');
@@ -17,6 +35,7 @@ function CompaniesPage() {
   const { data, isLoading, isError, error } = useCompanies({ status: status || undefined, page, size: 20 });
 
   const columns: DataTableColumn<CompanySummaryResponse>[] = [
+    { key: 'logoUrl', header: 'Logo', render: (row) => <CompanyLogo logoUrl={row.logoUrl} /> },
     { key: 'companyName', header: 'Company' },
     { key: 'ownerName', header: 'Owner' },
     {
@@ -113,6 +132,9 @@ function VerifyModal({ company, onClose }: { company: CompanySummaryResponse; on
 
   return (
     <Modal title={company.companyName} onClose={onClose}>
+      <div style={{ marginBottom: 18 }}>
+        <CompanyLogo logoUrl={company.logoUrl} size="lg" />
+      </div>
       <div className="detail-grid" style={{ marginBottom: 18 }}>
         <div className="detail-item">
           <div className="detail-item__label">Owner</div>
