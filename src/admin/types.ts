@@ -1,4 +1,4 @@
-import type { OrderBidStatus, OrderStatus, UserRole, UserStatus, VerificationStatus } from '@/types/enums';
+import type { OrderBidStatus, OrderStatus, UserRole, UserStatus, VerificationStatus, WithdrawalStatus } from '@/types/enums';
 
 /** Mirrors backend admin/dto/UserSummaryResponse. */
 export interface UserSummaryResponse {
@@ -167,4 +167,28 @@ export interface ServiceItemRequest {
   name: string;
   description?: string;
   active?: boolean;
+}
+
+/** Mirrors backend wallet/dto/WithdrawalRequestResponse. */
+export interface WithdrawalRequestResponse {
+  id: number;
+  ownerUserId: number;
+  ownerName: string;
+  amount: number;
+  bankAccountNumber: string;
+  status: WithdrawalStatus;
+  adminNote: string | null;
+  requestedAt: string;
+  processedAt: string | null;
+}
+
+export interface UpdateWithdrawalStatusRequest {
+  status: 'PAID' | 'REJECTED';
+  adminNote?: string;
+}
+
+export interface AdminWalletAdjustmentRequest {
+  ownerUserId: number;
+  amount: number;
+  note?: string;
 }

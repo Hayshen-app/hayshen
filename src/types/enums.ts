@@ -17,3 +17,5 @@ export type OrderStatus =
   | 'CANCELLED';
 
 export type OrderBidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+
+export type WithdrawalStatus = 'PENDING' | 'PAID' | 'REJECTED';

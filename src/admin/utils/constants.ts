@@ -1,4 +1,4 @@
-import type { OrderBidStatus, OrderStatus, UserRole, UserStatus, VerificationStatus } from '@/types/enums';
+import type { OrderBidStatus, OrderStatus, UserRole, UserStatus, VerificationStatus, WithdrawalStatus } from '@/types/enums';
 
 export const USER_ROLES: UserRole[] = ['CUSTOMER', 'CONTRACTOR', 'ADMIN', 'SUPPORT'];
 
@@ -23,6 +23,8 @@ export const ORDER_STATUSES: OrderStatus[] = [
 // via the manual admin dispatch action. See OrderStatus.java for the full
 // lifecycle diagram.
 export const DISPATCHABLE_ORDER_STATUSES: OrderStatus[] = ['SUBMITTED', 'REJECTED'];
+
+export const WITHDRAWAL_STATUSES: WithdrawalStatus[] = ['PENDING', 'PAID', 'REJECTED'];
 
 export type Tone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
@@ -83,6 +85,16 @@ const ORDER_BID_STATUS_TONE: Record<OrderBidStatus, Tone> = {
 
 export function orderBidStatusTone(status: OrderBidStatus): Tone {
   return ORDER_BID_STATUS_TONE[status] || 'neutral';
+}
+
+const WITHDRAWAL_STATUS_TONE: Record<WithdrawalStatus, Tone> = {
+  PENDING: 'warning',
+  PAID: 'success',
+  REJECTED: 'danger',
+};
+
+export function withdrawalStatusTone(status: WithdrawalStatus): Tone {
+  return WITHDRAWAL_STATUS_TONE[status] || 'neutral';
 }
 
 export function humanize(value?: string | null): string {
