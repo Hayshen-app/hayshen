@@ -6,6 +6,7 @@ import AdminLogin from '@/admin/pages/AdminLogin';
 import DashboardPage from '@/admin/pages/DashboardPage';
 import UsersPage from '@/admin/pages/UsersPage';
 import CompaniesPage from '@/admin/pages/CompaniesPage';
+import CompanyDetailPage from '@/admin/pages/CompanyDetailPage';
 import OrdersPage from '@/admin/pages/OrdersPage';
 import OrderDetailPage from '@/admin/pages/OrderDetailPage';
 import CategoriesPage from '@/admin/pages/CategoriesPage';
@@ -55,6 +56,7 @@ function AdminApp() {
         <Route index element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="companies" element={<CompaniesPage />} />
+        <Route path="companies/:id" element={<CompanyDetailPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="orders/:id" element={<OrderDetailPage />} />
         <Route path="categories" element={<CategoriesPage />} />
