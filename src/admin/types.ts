@@ -5,9 +5,11 @@ import type {
   OrderType,
   UserRole,
   UserStatus,
+  VehicleStatus,
   VerificationStatus,
   WalletTransactionType,
   WithdrawalStatus,
+  WorkerStatus,
 } from '@/types/enums';
 
 /** Mirrors backend admin/dto/UserSummaryResponse. */
@@ -29,6 +31,7 @@ export interface UpdateUserStatusRequest {
 export interface CompanySummaryResponse {
   id: number;
   companyName: string;
+  ownerId: number;
   ownerName: string;
   ownerEmail: string;
   ownerPhone: string;
@@ -94,6 +97,12 @@ export interface OrderMilestoneResponse {
   customerConfirmedDone: boolean;
   companyConfirmedDone: boolean;
   createdAt: string;
+}
+
+/** Mirrors backend wallet/dto/WalletBalanceResponse. */
+export interface WalletBalanceResponse {
+  totalBalance: number;
+  availableBalance: number;
 }
 
 /** Mirrors backend wallet/dto/WalletTransactionResponse. */
@@ -228,4 +237,38 @@ export interface AdminWalletAdjustmentRequest {
   ownerUserId: number;
   amount: number;
   note?: string;
+}
+
+/** Mirrors backend contractor/dto/WorkerResponse — Admin Console > Company Details. */
+export interface WorkerResponse {
+  id: number;
+  fullName: string;
+  phone: string | null;
+  title: string | null;
+  photoUrl: string | null;
+  status: WorkerStatus;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  addressCity: string | null;
+  addressLatitude: number | null;
+  addressLongitude: number | null;
+  rating: number | null;
+  ratingCount: number;
+}
+
+/** Mirrors backend contractor/dto/VehicleResponse — Admin Console > Company Details. */
+export interface VehicleResponse {
+  id: number;
+  plateNumber: string | null;
+  vehicleModelId: number | null;
+  vehicleModelName: string | null;
+  type: string | null;
+  capacity: string | null;
+  imageUrls: string[];
+  status: VehicleStatus;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  addressCity: string | null;
+  addressLatitude: number | null;
+  addressLongitude: number | null;
 }

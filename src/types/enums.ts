@@ -27,3 +27,7 @@ export type WalletTransactionType = 'RESERVE' | 'RELEASE' | 'REFUND' | 'ADJUSTME
 export type OrderType = 'ONE_TIME' | 'MID_TERM' | 'LONG_TERM';
 
 export type MilestoneStatus = 'PENDING' | 'DONE';
+
+export type WorkerStatus = 'ACTIVE' | 'INACTIVE';
+
+export type VehicleStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';

@@ -1,0 +1,54 @@
+.company-detail {
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5b6660;
+    margin-bottom: 16px;
+
+    &:hover {
+      color: #1e4a32;
+    }
+  }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  &__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__section-title {
+    margin: 0 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__muted {
+    color: #8e9791;
+    font-size: 12px;
+  }
+
+  &__amount--positive {
+    color: #1e8e5a;
+    font-weight: 700;
+  }
+
+  &__amount--negative {
+    color: #c0392b;
+    font-weight: 700;
+  }
+}
+
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

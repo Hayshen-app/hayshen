@@ -3,6 +3,7 @@ import { buildQuery, useAuthorizedRequest } from '@/admin/api/http';
 import type {
   AdminWalletAdjustmentRequest,
   UpdateWithdrawalStatusRequest,
+  WalletBalanceResponse,
   WalletTransactionResponse,
   WithdrawalRequestResponse,
 } from '@/admin/types';
@@ -57,5 +58,34 @@ export function useOrderPayments(orderId?: number) {
     queryKey: ['admin', 'orderPayments', orderId],
     queryFn: () => request<WalletTransactionResponse[]>(`/admin/wallet/orders/${orderId}/transactions`),
     enabled: orderId != null,
+  });
+}
+
+/** A user's (contractor owner or customer) wallet balance - Company/User Details "Payments" section. */
+export function useUserBalance(userId: string | number | undefined) {
+  const request = useAuthorizedRequest();
+  return useQuery({
+    queryKey: ['admin', 'userBalance', String(userId)],
+    queryFn: () => request<WalletBalanceResponse>(`/admin/wallet/users/${userId}/balance`),
+    enabled: Boolean(userId),
+  });
+}
+
+interface UseUserTransactionsParams {
+  page?: number;
+  size?: number;
+}
+
+export function useUserTransactions(
+  userId: string | number | undefined,
+  { page = 0, size = 20 }: UseUserTransactionsParams = {},
+) {
+  const request = useAuthorizedRequest();
+  return useQuery({
+    queryKey: ['admin', 'userTransactions', String(userId), { page, size }],
+    queryFn: () =>
+      request<PageResponse<WalletTransactionResponse>>(`/admin/wallet/users/${userId}/transactions${buildQuery({ page, size })}`),
+    enabled: Boolean(userId),
+    placeholderData: (previous) => previous,
   });
 }
