@@ -1,4 +1,14 @@
-import type { OrderBidStatus, OrderStatus, UserRole, UserStatus, VerificationStatus, WithdrawalStatus } from '@/types/enums';
+import type {
+  MilestoneStatus,
+  OrderBidStatus,
+  OrderStatus,
+  OrderType,
+  UserRole,
+  UserStatus,
+  VerificationStatus,
+  WalletTransactionType,
+  WithdrawalStatus,
+} from '@/types/enums';
 
 /** Mirrors backend admin/dto/UserSummaryResponse. */
 export interface UserSummaryResponse {
@@ -64,6 +74,7 @@ export interface OrderSummaryResponse {
   categoryName: string;
   serviceItemName: string | null;
   status: OrderStatus;
+  orderType: OrderType;
   addressCity: string;
   scheduledAt: string | null;
   createdAt: string;
@@ -71,6 +82,30 @@ export interface OrderSummaryResponse {
   assignedCompanyName: string | null;
   finalPrice: number | null;
   estimatedDeliveryAt: string | null;
+}
+
+/** Mirrors backend order/dto/OrderMilestoneResponse. */
+export interface OrderMilestoneResponse {
+  id: number;
+  sequence: number;
+  title: string;
+  amount: number;
+  status: MilestoneStatus;
+  customerConfirmedDone: boolean;
+  companyConfirmedDone: boolean;
+  createdAt: string;
+}
+
+/** Mirrors backend wallet/dto/WalletTransactionResponse. */
+export interface WalletTransactionResponse {
+  id: number;
+  ownerUserId: number;
+  ownerName: string;
+  type: WalletTransactionType;
+  amount: number;
+  orderId: number | null;
+  availableAt: string | null;
+  createdAt: string;
 }
 
 export interface OrderStatusHistoryResponse {
@@ -97,6 +132,7 @@ export interface OrderResponse {
   addressLongitude: number | null;
   scheduledAt: string | null;
   status: OrderStatus;
+  orderType: OrderType;
   assignedCompanyId: number | null;
   assignedCompanyName: string | null;
   assignedWorkerId: number | null;
@@ -112,6 +148,7 @@ export interface OrderResponse {
   createdAt: string;
   updatedAt: string;
   history: OrderStatusHistoryResponse[];
+  milestones: OrderMilestoneResponse[];
 }
 
 export interface AdminAssignOrderRequest {

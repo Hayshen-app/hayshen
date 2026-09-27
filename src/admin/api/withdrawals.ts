@@ -1,6 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildQuery, useAuthorizedRequest } from '@/admin/api/http';
-import type { AdminWalletAdjustmentRequest, UpdateWithdrawalStatusRequest, WithdrawalRequestResponse } from '@/admin/types';
+import type {
+  AdminWalletAdjustmentRequest,
+  UpdateWithdrawalStatusRequest,
+  WalletTransactionResponse,
+  WithdrawalRequestResponse,
+} from '@/admin/types';
 import type { PageResponse } from '@/types/api';
 import type { WithdrawalStatus } from '@/types/enums';
 
@@ -42,5 +47,15 @@ export function useAdjustWallet() {
   return useMutation({
     mutationFn: (body: AdminWalletAdjustmentRequest) =>
       request<void>('/admin/wallet/adjustments', { method: 'POST', body }),
+  });
+}
+
+/** Every wallet ledger row (reserve/release/refund) an order produced - Order Details "Payments" section. */
+export function useOrderPayments(orderId?: number) {
+  const request = useAuthorizedRequest();
+  return useQuery({
+    queryKey: ['admin', 'orderPayments', orderId],
+    queryFn: () => request<WalletTransactionResponse[]>(`/admin/wallet/orders/${orderId}/transactions`),
+    enabled: orderId != null,
   });
 }

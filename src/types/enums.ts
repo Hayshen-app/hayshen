@@ -19,3 +19,11 @@ export type OrderStatus =
 export type OrderBidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
 export type WithdrawalStatus = 'PENDING' | 'PAID' | 'REJECTED';
+
+export type WalletTransactionType = 'RESERVE' | 'RELEASE' | 'REFUND' | 'ADJUSTMENT';
+
+// Picked on Create Order. MID_TERM/LONG_TERM orders can be split - by either side - into
+// payment phases ("milestones", see OrderMilestoneResponse).
+export type OrderType = 'ONE_TIME' | 'MID_TERM' | 'LONG_TERM';
+
+export type MilestoneStatus = 'PENDING' | 'DONE';

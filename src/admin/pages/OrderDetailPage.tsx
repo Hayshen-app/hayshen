@@ -2,10 +2,11 @@ import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useOrder, useOrderBids } from '@/admin/api/orders';
+import { useOrderPayments } from '@/admin/api/withdrawals';
 import DataTable from '@/admin/components/DataTable';
 import StatusBadge from '@/admin/components/StatusBadge';
 import DispatchModal from '@/admin/pages/DispatchModal';
-import { DISPATCHABLE_ORDER_STATUSES, orderBidStatusTone, orderStatusTone } from '@/admin/utils/constants';
+import { DISPATCHABLE_ORDER_STATUSES, humanize, orderBidStatusTone, orderStatusTone } from '@/admin/utils/constants';
 import { formatCurrency, formatDateTime } from '@/admin/utils/format';
 import '@/admin/pages/orderDetailPage.scss';
 
@@ -13,6 +14,9 @@ function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, isError, error } = useOrder(id);
   const { data: bids, isLoading: bidsLoading, isError: bidsError } = useOrderBids(id);
+  const { data: payments, isLoading: paymentsLoading, isError: paymentsError } = useOrderPayments(
+    order ? Number(order.id) : undefined,
+  );
   const [showDispatch, setShowDispatch] = useState(false);
 
   return (
@@ -74,6 +78,7 @@ function OrderDetailPage() {
             <div className="card">
               <h2 className="order-detail__section-title">Assignment & pricing</h2>
               <div className="detail-grid">
+                <Detail label="Order type" value={humanize(order.orderType)} />
                 <Detail label="Company" value={order.assignedCompanyName || 'Not assigned'} />
                 <Detail label="Worker" value={order.assignedWorkerName || 'Not assigned'} />
                 <Detail label="Final price" value={formatCurrency(order.finalPrice)} />
@@ -113,6 +118,56 @@ function OrderDetailPage() {
                 isError={bidsError}
                 errorMessage="Failed to load bids."
                 emptyMessage="No bids placed on this order yet."
+              />
+            </div>
+
+            {order.milestones.length > 0 && (
+              <div className="card">
+                <h2 className="order-detail__section-title">Payment plan (milestones)</h2>
+                <DataTable
+                  columns={[
+                    { key: 'sequence', header: '#' },
+                    { key: 'title', header: 'Phase' },
+                    { key: 'amount', header: 'Amount', render: (m) => formatCurrency(m.amount) },
+                    {
+                      key: 'status',
+                      header: 'Status',
+                      render: (m) => (
+                        <StatusBadge status={m.status} tone={m.status === 'DONE' ? 'success' : 'warning'} />
+                      ),
+                    },
+                    { key: 'customerConfirmedDone', header: 'Customer confirmed', render: (m) => (m.customerConfirmedDone ? 'Yes' : 'No') },
+                    { key: 'companyConfirmedDone', header: 'Company confirmed', render: (m) => (m.companyConfirmedDone ? 'Yes' : 'No') },
+                  ]}
+                  rows={order.milestones}
+                  rowKey={(m) => m.id}
+                  emptyMessage="No payment phases defined for this order."
+                />
+              </div>
+            )}
+
+            <div className="card">
+              <h2 className="order-detail__section-title">Payments</h2>
+              <DataTable
+                columns={[
+                  {
+                    key: 'type',
+                    header: 'Type',
+                    render: (tx) => (
+                      <StatusBadge status={tx.type} tone={tx.type === 'RELEASE' || tx.type === 'REFUND' ? 'success' : 'neutral'} />
+                    ),
+                  },
+                  { key: 'ownerName', header: 'Wallet owner' },
+                  { key: 'amount', header: 'Amount', render: (tx) => formatCurrency(tx.amount) },
+                  { key: 'availableAt', header: 'Available at', render: (tx) => formatDateTime(tx.availableAt) },
+                  { key: 'createdAt', header: 'Recorded at', render: (tx) => formatDateTime(tx.createdAt) },
+                ]}
+                rows={payments}
+                rowKey={(tx) => tx.id}
+                isLoading={paymentsLoading}
+                isError={paymentsError}
+                errorMessage="Failed to load payment history."
+                emptyMessage="No wallet activity recorded for this order yet."
               />
             </div>
 
