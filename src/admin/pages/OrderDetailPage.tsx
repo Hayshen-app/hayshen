@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Banknote, Handshake, Milestone, Receipt } from 'lucide-react';
 import { useOrder, useOrderBids } from '@/admin/api/orders';
 import { useOrderPayments } from '@/admin/api/withdrawals';
 import DataTable from '@/admin/components/DataTable';
+import StatCard from '@/admin/components/StatCard';
 import StatusBadge from '@/admin/components/StatusBadge';
 import DispatchModal from '@/admin/pages/DispatchModal';
 import { DISPATCHABLE_ORDER_STATUSES, humanize, orderBidStatusTone, orderStatusTone } from '@/admin/utils/constants';
@@ -18,6 +19,8 @@ function OrderDetailPage() {
     order ? Number(order.id) : undefined,
   );
   const [showDispatch, setShowDispatch] = useState(false);
+
+  const milestonesDone = order?.milestones.filter((m) => m.status === 'DONE').length ?? 0;
 
   return (
     <div>
@@ -47,45 +50,76 @@ function OrderDetailPage() {
             )}
           </div>
 
-          <div className="order-detail__grid">
+          <div className="stat-grid">
+            <StatCard icon={<Banknote size={20} />} label="Agreed price" value={formatCurrency(order.finalPrice)} />
+            <StatCard icon={<Handshake size={20} />} label="Bids received" value={String(bids?.length ?? 0)} />
+            <StatCard
+              icon={<Milestone size={20} />}
+              label="Milestones done"
+              value={order.milestones.length ? `${milestonesDone} / ${order.milestones.length}` : '—'}
+            />
+            <StatCard icon={<Receipt size={20} />} label="Payments recorded" value={String(payments?.length ?? 0)} />
+          </div>
+
+          <div className="order-detail__sections">
             <div className="card">
-              <h2 className="order-detail__section-title">Customer</h2>
-              <div className="detail-grid">
-                <Detail label="Name" value={order.customerName} />
-                <Detail label="Phone" value={order.customerPhone} />
+              <h2 className="order-detail__section-title">Order summary</h2>
+              <div className="order-detail__summary-groups">
+                <div>
+                  <h3 className="order-detail__group-title">Customer</h3>
+                  <div className="detail-grid">
+                    <Detail label="Name" value={order.customerName} />
+                    <Detail label="Phone" value={order.customerPhone} />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="order-detail__group-title">Service</h3>
+                  <div className="detail-grid">
+                    <Detail label="Category" value={order.categoryName} />
+                    <Detail label="Service item" value={order.serviceItemName || '—'} />
+                    <Detail label="Description" value={order.description || '—'} />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="order-detail__group-title">Address & schedule</h3>
+                  <div className="detail-grid">
+                    <Detail
+                      label="Address"
+                      value={[order.addressLine1, order.addressLine2].filter(Boolean).join(', ') || '—'}
+                    />
+                    <Detail label="City" value={order.addressCity} />
+                    <Detail label="Scheduled" value={formatDateTime(order.scheduledAt)} />
+                    <Detail label="Estimated delivery" value={formatDateTime(order.estimatedDeliveryAt)} />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="order-detail__group-title">Assignment & pricing</h3>
+                  <div className="detail-grid">
+                    <Detail label="Order type" value={humanize(order.orderType)} />
+                    <Detail label="Company" value={order.assignedCompanyName || 'Not assigned'} />
+                    <Detail label="Worker" value={order.assignedWorkerName || 'Not assigned'} />
+                    <Detail label="Customer confirmed done" value={order.customerConfirmedDone ? 'Yes' : 'No'} />
+                    <Detail label="Company confirmed done" value={order.companyConfirmedDone ? 'Yes' : 'No'} />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="card">
-              <h2 className="order-detail__section-title">Service</h2>
-              <div className="detail-grid">
-                <Detail label="Category" value={order.categoryName} />
-                <Detail label="Service item" value={order.serviceItemName || '—'} />
-                <Detail label="Description" value={order.description || '—'} />
+            {order.imageUrls.length > 0 && (
+              <div className="card">
+                <h2 className="order-detail__section-title">Images</h2>
+                <div className="order-detail__images">
+                  {order.imageUrls.map((url) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer">
+                      <img src={url} alt="Order attachment" />
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
-
-            <div className="card">
-              <h2 className="order-detail__section-title">Address & schedule</h2>
-              <div className="detail-grid">
-                <Detail label="Address" value={[order.addressLine1, order.addressLine2].filter(Boolean).join(', ') || '—'} />
-                <Detail label="City" value={order.addressCity} />
-                <Detail label="Scheduled" value={formatDateTime(order.scheduledAt)} />
-                <Detail label="Estimated delivery" value={formatDateTime(order.estimatedDeliveryAt)} />
-              </div>
-            </div>
-
-            <div className="card">
-              <h2 className="order-detail__section-title">Assignment & pricing</h2>
-              <div className="detail-grid">
-                <Detail label="Order type" value={humanize(order.orderType)} />
-                <Detail label="Company" value={order.assignedCompanyName || 'Not assigned'} />
-                <Detail label="Worker" value={order.assignedWorkerName || 'Not assigned'} />
-                <Detail label="Final price" value={formatCurrency(order.finalPrice)} />
-                <Detail label="Customer confirmed done" value={order.customerConfirmedDone ? 'Yes' : 'No'} />
-                <Detail label="Company confirmed done" value={order.companyConfirmedDone ? 'Yes' : 'No'} />
-              </div>
-            </div>
+            )}
 
             <div className="card">
               <h2 className="order-detail__section-title">Company bids</h2>
@@ -111,6 +145,12 @@ function OrderDetailPage() {
                     render: (bid) => <StatusBadge status={bid.status} tone={orderBidStatusTone(bid.status)} />,
                   },
                   { key: 'createdAt', header: 'Placed at', render: (bid) => formatDateTime(bid.createdAt) },
+                  {
+                    key: 'result',
+                    header: '',
+                    render: (bid) =>
+                      order.assignedCompanyId === bid.companyId ? <StatusBadge status="Winner" tone="success" /> : null,
+                  },
                 ]}
                 rows={bids}
                 rowKey={(bid) => bid.id}
@@ -124,6 +164,10 @@ function OrderDetailPage() {
             {order.milestones.length > 0 && (
               <div className="card">
                 <h2 className="order-detail__section-title">Payment plan (milestones)</h2>
+                <p className="order-detail__section-note">
+                  {milestonesDone} of {order.milestones.length} phases paid out ·{' '}
+                  {formatCurrency(order.milestones.reduce((sum, m) => sum + m.amount, 0))} total across all phases
+                </p>
                 <DataTable
                   columns={[
                     { key: 'sequence', header: '#' },
@@ -132,12 +176,19 @@ function OrderDetailPage() {
                     {
                       key: 'status',
                       header: 'Status',
-                      render: (m) => (
-                        <StatusBadge status={m.status} tone={m.status === 'DONE' ? 'success' : 'warning'} />
-                      ),
+                      render: (m) => <StatusBadge status={m.status} tone={m.status === 'DONE' ? 'success' : 'warning'} />,
                     },
-                    { key: 'customerConfirmedDone', header: 'Customer confirmed', render: (m) => (m.customerConfirmedDone ? 'Yes' : 'No') },
-                    { key: 'companyConfirmedDone', header: 'Company confirmed', render: (m) => (m.companyConfirmedDone ? 'Yes' : 'No') },
+                    {
+                      key: 'customerConfirmedDone',
+                      header: 'Customer confirmed',
+                      render: (m) => (m.customerConfirmedDone ? 'Yes' : 'No'),
+                    },
+                    {
+                      key: 'companyConfirmedDone',
+                      header: 'Company confirmed',
+                      render: (m) => (m.companyConfirmedDone ? 'Yes' : 'No'),
+                    },
+                    { key: 'createdAt', header: 'Proposed at', render: (m) => formatDateTime(m.createdAt) },
                   ]}
                   rows={order.milestones}
                   rowKey={(m) => m.id}
@@ -158,7 +209,16 @@ function OrderDetailPage() {
                     ),
                   },
                   { key: 'ownerName', header: 'Wallet owner' },
-                  { key: 'amount', header: 'Amount', render: (tx) => formatCurrency(tx.amount) },
+                  {
+                    key: 'amount',
+                    header: 'Amount',
+                    render: (tx) => (
+                      <span className={tx.amount < 0 ? 'order-detail__amount--negative' : 'order-detail__amount--positive'}>
+                        {tx.amount > 0 ? '+' : ''}
+                        {formatCurrency(tx.amount)}
+                      </span>
+                    ),
+                  },
                   { key: 'availableAt', header: 'Available at', render: (tx) => formatDateTime(tx.availableAt) },
                   { key: 'createdAt', header: 'Recorded at', render: (tx) => formatDateTime(tx.createdAt) },
                 ]}
@@ -178,19 +238,6 @@ function OrderDetailPage() {
                   {order.rejectReason && <Detail label="Reject reason" value={order.rejectReason} />}
                   {order.cancelReason && <Detail label="Cancel reason" value={order.cancelReason} />}
                   {order.cancelledAt && <Detail label="Cancelled at" value={formatDateTime(order.cancelledAt)} />}
-                </div>
-              </div>
-            )}
-
-            {order.imageUrls.length > 0 && (
-              <div className="card">
-                <h2 className="order-detail__section-title">Images</h2>
-                <div className="order-detail__images">
-                  {order.imageUrls.map((url) => (
-                    <a key={url} href={url} target="_blank" rel="noreferrer">
-                      <img src={url} alt="Order attachment" />
-                    </a>
-                  ))}
                 </div>
               </div>
             )}
