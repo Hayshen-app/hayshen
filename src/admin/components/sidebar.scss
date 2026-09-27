@@ -1,18 +1,62 @@
 .admin-sidebar {
   display: flex;
   flex-direction: column;
-  width: 232px;
+  width: 240px;
   flex-shrink: 0;
   background: #fff;
-  border-right: 1px solid #e4e4e4;
-  padding: 20px 12px;
+  border-right: 1px solid #e1e7e2;
+  padding: 20px 14px;
 
   &__brand {
-    font-size: 16px;
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px;
+    margin-bottom: 26px;
+  }
+
+  &__mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: #1e4a32;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  &__brand-text {
+    line-height: 1.2;
+  }
+
+  &__brand-name {
+    font-size: 15px;
+    font-weight: 800;
     letter-spacing: -0.01em;
-    padding: 0 10px;
-    margin-bottom: 22px;
+  }
+
+  &__brand-sub {
+    font-size: 11px;
+    color: #8e9791;
+    font-weight: 600;
+  }
+
+  &__group {
+    margin-bottom: 18px;
+  }
+
+  &__group-label {
+    padding: 0 12px;
+    margin-bottom: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #8e9791;
   }
 
   ul {
@@ -28,19 +72,22 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 9px 12px;
+    border-left: 3px solid transparent;
     border-radius: 8px;
     color: #444;
     font-size: 14px;
     font-weight: 600;
 
     &:hover {
-      background: #f2f4f2;
+      background: #f2f5f3;
+      color: #151a17;
     }
 
     &.is-active {
-      background: rgba(39, 82, 49, 0.1);
-      color: #275231;
+      background: #e6efe9;
+      border-left-color: #1e4a32;
+      color: #1e4a32;
     }
   }
 }

@@ -18,13 +18,13 @@
 
   &__label {
     font-size: 13px;
-    color: #444;
+    color: #33413a;
   }
 
   &__track {
     height: 10px;
     border-radius: 999px;
-    background: #eef0ee;
+    background: #e7ece8;
     overflow: hidden;
   }
 
@@ -34,7 +34,7 @@
     min-width: 3px;
 
     &--neutral {
-      background: #9aa19a;
+      background: #93a199;
     }
 
     &--info {

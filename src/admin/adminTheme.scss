@@ -2,20 +2,33 @@
 // from AdminLayout/AdminLogin so every admin page/component can rely on
 // these classes without re-declaring them.
 
-$admin-green: #275231;
-$admin-green-dark: #1b3a22;
-$admin-ink: #111;
-$admin-muted: #666;
-$admin-border: #e4e4e4;
-$admin-bg: #f6f7f6;
+$admin-green: #1e4a32;
+$admin-green-dark: #123422;
+$admin-green-light: #e6efe9;
+$admin-ink: #151a17;
+$admin-muted: #5b6660;
+$admin-subtle: #8e9791;
+$admin-border: #e1e7e2;
+$admin-bg: #f2f5f3;
+$admin-surface: #fff;
 $admin-danger: #c0392b;
 $admin-warning: #b8860b;
 $admin-info: #2563eb;
 $admin-success: #1e8e5a;
 
+$shadow-sm: 0 1px 2px rgba(15, 23, 18, 0.06), 0 1px 1px rgba(15, 23, 18, 0.04);
+$shadow-md: 0 16px 40px rgba(15, 23, 18, 0.16), 0 4px 10px rgba(15, 23, 18, 0.08);
+
 .admin {
   color: $admin-ink;
   font-size: 14px;
+  font-family:
+    'Manrope Variable',
+    'Noto Sans Armenian Variable',
+    'Noto Sans Armenian',
+    system-ui,
+    -apple-system,
+    sans-serif;
 
   * {
     box-sizing: border-box;
@@ -36,11 +49,11 @@ $admin-success: #1e8e5a;
   gap: 6px;
   padding: 9px 16px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 
   &:disabled {
     opacity: 0.55;
@@ -50,6 +63,7 @@ $admin-success: #1e8e5a;
   &--primary {
     background: $admin-green;
     color: #fff;
+    box-shadow: $shadow-sm;
 
     &:hover:not(:disabled) {
       background: $admin-green-dark;
@@ -63,12 +77,13 @@ $admin-success: #1e8e5a;
 
     &:hover:not(:disabled) {
       border-color: $admin-green;
+      color: $admin-green;
     }
   }
 
   &--danger {
     background: #fff;
-    border-color: rgba($admin-danger, 0.4);
+    border-color: rgba($admin-danger, 0.35);
     color: $admin-danger;
 
     &:hover:not(:disabled) {
@@ -94,9 +109,10 @@ $admin-success: #1e8e5a;
 // ---- Cards / page shell -------------------------------------------------
 
 .card {
-  background: #fff;
+  background: $admin-surface;
   border: 1px solid $admin-border;
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: $shadow-sm;
   padding: 20px;
 }
 
@@ -106,17 +122,17 @@ $admin-success: #1e8e5a;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 
   h1 {
     margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.015em;
   }
 
   p {
-    margin: 4px 0 0;
+    margin: 5px 0 0;
     color: $admin-muted;
     font-size: 13px;
   }
@@ -133,32 +149,42 @@ $admin-success: #1e8e5a;
   select {
     padding: 8px 12px;
     border: 1px solid $admin-border;
-    border-radius: 8px;
+    border-radius: 9px;
     font-size: 13px;
     background: #fff;
     color: $admin-ink;
 
     &:focus {
-      outline: 2px solid rgba($admin-green, 0.25);
+      outline: 2px solid rgba($admin-green, 0.22);
       border-color: $admin-green;
     }
   }
 }
 
-// ---- Badges --------------------------------------------------------------
+// ---- Badges: a leading status dot reads faster across a dense table -----
 
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
   &--neutral {
-    background: #eee;
-    color: #444;
+    background: #eef0ee;
+    color: #566058;
   }
 
   &--info {
@@ -187,8 +213,9 @@ $admin-success: #1e8e5a;
 .table-wrap {
   overflow-x: auto;
   border: 1px solid $admin-border;
-  border-radius: 12px;
-  background: #fff;
+  border-radius: 14px;
+  background: $admin-surface;
+  box-shadow: $shadow-sm;
 }
 
 table.table {
@@ -198,7 +225,7 @@ table.table {
 
   th,
   td {
-    padding: 12px 14px;
+    padding: 11px 16px;
     text-align: left;
     border-bottom: 1px solid $admin-border;
     white-space: nowrap;
@@ -207,18 +234,22 @@ table.table {
   th {
     background: $admin-bg;
     color: $admin-muted;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.04em;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
   }
 
   tbody tr:last-child td {
     border-bottom: none;
   }
 
+  tbody tr:nth-child(even) {
+    background: rgba($admin-green, 0.02);
+  }
+
   tbody tr:hover {
-    background: rgba($admin-green, 0.03);
+    background: $admin-green-light;
   }
 }
 
@@ -238,7 +269,7 @@ table.table {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border-top: 1px solid $admin-border;
   font-size: 13px;
   color: $admin-muted;
@@ -246,7 +277,7 @@ table.table {
   button {
     padding: 5px 10px;
     border: 1px solid $admin-border;
-    border-radius: 6px;
+    border-radius: 7px;
     background: #fff;
     cursor: pointer;
     font-size: 13px;
@@ -258,6 +289,7 @@ table.table {
 
     &:hover:not(:disabled) {
       border-color: $admin-green;
+      color: $admin-green;
     }
   }
 }
@@ -281,14 +313,14 @@ table.table {
   textarea {
     padding: 10px 12px;
     border: 1px solid $admin-border;
-    border-radius: 8px;
+    border-radius: 9px;
     font-size: 14px;
     color: $admin-ink;
     background: #fff;
     font-family: inherit;
 
     &:focus {
-      outline: 2px solid rgba($admin-green, 0.25);
+      outline: 2px solid rgba($admin-green, 0.22);
       border-color: $admin-green;
     }
   }
@@ -321,7 +353,7 @@ table.table {
 .form-error {
   margin-bottom: 16px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 9px;
   background: rgba($admin-danger, 0.08);
   color: $admin-danger;
   font-size: 13px;
@@ -341,6 +373,28 @@ table.table {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
   margin-bottom: 24px;
+
+  // A little color variety across the row keeps five identical cards from
+  // reading as one grey block - purely cosmetic, no meaning attached.
+  .stat-card:nth-child(4n + 1) .stat-card__icon {
+    background: rgba($admin-green, 0.12);
+    color: $admin-green;
+  }
+
+  .stat-card:nth-child(4n + 2) .stat-card__icon {
+    background: rgba($admin-info, 0.12);
+    color: $admin-info;
+  }
+
+  .stat-card:nth-child(4n + 3) .stat-card__icon {
+    background: rgba($admin-warning, 0.14);
+    color: $admin-warning;
+  }
+
+  .stat-card:nth-child(4n + 4) .stat-card__icon {
+    background: rgba($admin-success, 0.12);
+    color: $admin-success;
+  }
 }
 
 .stat-card {
@@ -353,23 +407,25 @@ table.table {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
     background: rgba($admin-green, 0.1);
     color: $admin-green;
     flex-shrink: 0;
   }
 
   &__value {
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 23px;
+    font-weight: 800;
     line-height: 1.1;
+    letter-spacing: -0.01em;
   }
 
   &__label {
     font-size: 12px;
     color: $admin-muted;
+    margin-top: 2px;
   }
 }
 
@@ -378,7 +434,7 @@ table.table {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(10, 16, 12, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -392,7 +448,8 @@ table.table {
   max-height: 90vh;
   overflow-y: auto;
   background: #fff;
-  border-radius: 14px;
+  border-radius: 16px;
+  box-shadow: $shadow-md;
   padding: 24px;
 
   &__header {
@@ -438,8 +495,8 @@ table.table {
   &__label {
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: $admin-muted;
+    letter-spacing: 0.05em;
+    color: $admin-subtle;
     margin-bottom: 4px;
   }
 
