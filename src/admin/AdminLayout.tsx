@@ -14,6 +14,7 @@ function AdminLayout() {
       <div className="admin-shell__main">
         <header className="admin-topbar">
           <div className="admin-topbar__identity">
+            <span className="admin-topbar__avatar">{session?.fullName?.trim().charAt(0).toUpperCase() || '?'}</span>
             <span className="admin-topbar__name">{session?.fullName}</span>
             <span className="admin-topbar__role">{session?.role}</span>
           </div>

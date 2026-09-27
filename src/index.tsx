@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@fontsource-variable/noto-sans-armenian';
+import '@fontsource-variable/manrope';
 import App from '@/App';
 import '@/index.scss';
 
