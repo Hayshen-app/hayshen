@@ -9,6 +9,7 @@ import CompaniesPage from '@/admin/pages/CompaniesPage';
 import OrdersPage from '@/admin/pages/OrdersPage';
 import OrderDetailPage from '@/admin/pages/OrderDetailPage';
 import CategoriesPage from '@/admin/pages/CategoriesPage';
+import WithdrawalsPage from '@/admin/pages/WithdrawalsPage';
 import SettingsPage from '@/admin/pages/SettingsPage';
 import type { UserRole } from '@/types/enums';
 import '@/admin/adminTheme.scss';
@@ -57,6 +58,7 @@ function AdminApp() {
         <Route path="orders" element={<OrdersPage />} />
         <Route path="orders/:id" element={<OrderDetailPage />} />
         <Route path="categories" element={<CategoriesPage />} />
+        <Route path="withdrawals" element={<WithdrawalsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />

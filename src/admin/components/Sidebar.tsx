@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Building2, ClipboardList, LayoutDashboard, Layers, Settings, Users, type LucideProps } from 'lucide-react';
+import { Building2, ClipboardList, LayoutDashboard, Layers, Settings, Users, Wallet, type LucideProps } from 'lucide-react';
 import '@/admin/components/sidebar.scss';
 
 interface NavItem {
@@ -16,6 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { to: '/admin/categories', label: 'Categories', icon: Layers },
+  { to: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
