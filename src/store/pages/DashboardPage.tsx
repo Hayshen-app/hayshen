@@ -35,7 +35,7 @@ function DashboardPage() {
         <LoadingState />
       ) : dashboard.isError ? (
         <ErrorState message={storeErrorMessage(dashboard.error, 'Չհաջողվեց բեռնել վահանակը')} onRetry={() => dashboard.refetch()} />
-      ) : (
+      ) : d ? (
         <>
           <div className="st-stats">
             <StatCard
@@ -65,7 +65,7 @@ function DashboardPage() {
             </div>
           )}
         </>
-      )}
+      ) : null}
 
       <Card title="Վերջին պատվերները" actions={<Link to="/store/orders">Բոլորը</Link>}>
         {recent.isPending ? (
