@@ -13,6 +13,7 @@ import Login from '@/pages/AuthPages/Login';
 import Register from '@/pages/AuthPages/Register';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import AdminApp from '@/admin/AdminApp';
+import StoreApp from '@/store/StoreApp';
 
 type View = 'landing' | 'login' | 'register';
 
@@ -55,6 +56,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/admin/*" element={<AdminApp />} />
+        <Route path="/store/*" element={<StoreApp />} />
         <Route path="/*" element={<PublicSite />} />
       </Routes>
     </AuthProvider>
