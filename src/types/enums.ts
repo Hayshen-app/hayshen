@@ -18,15 +18,63 @@ export type OrderStatus =
 
 export type OrderBidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
-export type WithdrawalStatus = 'PENDING' | 'PAID' | 'REJECTED';
+// V17: PAID was renamed to COMPLETED (only with a real bank payout reference); FAILED returns the money.
+export type WithdrawalStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REJECTED';
 
-export type WalletTransactionType = 'RESERVE' | 'RELEASE' | 'REFUND' | 'ADJUSTMENT';
+export type WalletTransactionType =
+  | 'DEPOSIT'
+  | 'MILESTONE_FUNDED'
+  | 'MILESTONE_SETTLED'
+  | 'EARNING_HELD'
+  | 'HOLD_RELEASED'
+  | 'RESERVATION_REFUNDED'
+  | 'EARNING_REVERSED'
+  | 'WITHDRAWAL_RESERVED'
+  | 'WITHDRAWAL_COMPLETED'
+  | 'WITHDRAWAL_RELEASED'
+  | 'ADJUSTMENT'
+  | 'LEGACY_RESERVE_MIGRATED'
+  | 'LEGACY_RESERVE_RETURNED'
+  // Legacy (pre-V17) ledger rows.
+  | 'RESERVE'
+  | 'RELEASE'
+  | 'REFUND';
 
-// Picked on Create Order. MID_TERM/LONG_TERM orders can be split - by either side - into
-// payment phases ("milestones", see OrderMilestoneResponse).
-export type OrderType = 'ONE_TIME' | 'MID_TERM' | 'LONG_TERM';
+/** Ledger bucket a wallet row moves money in/out of. */
+export type WalletBucket = 'AVAILABLE' | 'RESERVED' | 'HELD' | 'PENDING_WITHDRAWAL';
 
-export type MilestoneStatus = 'PENDING' | 'DONE';
+export type WalletStatus = 'ACTIVE' | 'FROZEN';
+
+// Picked on Create Order. MEDIUM_TERM (ends within 3 months of the start) / LONG_TERM orders are
+// split into milestones the consumer funds one at a time. The backend still accepts legacy MID_TERM.
+export type OrderType = 'ONE_TIME' | 'MEDIUM_TERM' | 'LONG_TERM';
+
+export type MilestonePlanStatus = 'DRAFT' | 'PROPOSED' | 'APPROVED' | 'REJECTED';
+
+export type MilestoneStatus =
+  | 'DRAFT'
+  | 'PROPOSED'
+  | 'APPROVED'
+  | 'FUNDED'
+  | 'COMPLETED'
+  | 'REVISION_REQUESTED'
+  | 'ACCEPTED'
+  | 'DISPUTED'
+  | 'REFUNDED'
+  | 'CANCELLED'
+  | 'SUPERSEDED';
+
+/** A milestone's own payment record. */
+export type PaymentStatus = 'CONFIRMED' | 'SETTLED' | 'REFUNDED';
+
+/** Contractor 7-day hold on an accepted milestone's earnings. */
+export type HoldStatus = 'HELD' | 'BLOCKED' | 'RELEASED' | 'REVERSED';
+
+export type DisputeStatus = 'OPEN' | 'RESOLVED_RELEASED' | 'RESOLVED_REFUNDED';
+
+export type DisputeResolution = 'RELEASE_TO_CONTRACTOR' | 'REFUND_TO_CONSUMER';
+
+export type BankAccountStatus = 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED' | 'REMOVED';
 
 export type WorkerStatus = 'ACTIVE' | 'INACTIVE';
 

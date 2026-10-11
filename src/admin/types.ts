@@ -1,5 +1,13 @@
 import type {
+  BankAccountStatus,
+  DisputeResolution,
+  DisputeStatus,
+  HoldStatus,
+  WalletStatus,
+  MilestonePlanStatus,
   MilestoneStatus,
+  PaymentStatus,
+  WalletBucket,
   OrderBidStatus,
   OrderStatus,
   OrderType,
@@ -78,6 +86,8 @@ export interface OrderSummaryResponse {
   serviceItemName: string | null;
   status: OrderStatus;
   orderType: OrderType;
+  plannedStartDate: string | null;
+  plannedEndDate: string | null;
   addressCity: string;
   scheduledAt: string | null;
   createdAt: string;
@@ -87,33 +97,146 @@ export interface OrderSummaryResponse {
   estimatedDeliveryAt: string | null;
 }
 
+/** Mirrors backend order/dto/OrderMilestoneResponse.PaymentInfo - the milestone's own payment. */
+export interface MilestonePaymentInfo {
+  id: number;
+  status: PaymentStatus;
+  providerReference: string | null;
+  amount: number;
+  fundedAt: string | null;
+  settledAt: string | null;
+  refundedAt: string | null;
+}
+
+/** Mirrors backend order/dto/OrderMilestoneResponse.HoldInfo - contractor 7-day hold. */
+export interface MilestoneHoldInfo {
+  id: number;
+  status: HoldStatus;
+  holdStartAt: string | null;
+  releaseAt: string | null;
+}
+
+/** Mirrors backend order/dto/OrderMilestoneResponse.DisputeInfo. */
+export interface MilestoneDisputeInfo {
+  id: number;
+  status: DisputeStatus;
+  openedByUserId: number | null;
+  openedByName: string | null;
+  reason: string | null;
+  resolutionNote: string | null;
+  openedAt: string | null;
+  resolvedAt: string | null;
+}
+
 /** Mirrors backend order/dto/OrderMilestoneResponse. */
 export interface OrderMilestoneResponse {
   id: number;
+  orderId: number;
   sequence: number;
   title: string;
+  description: string | null;
   amount: number;
+  currency: string;
+  startDate: string | null;
+  dueDate: string | null;
   status: MilestoneStatus;
-  customerConfirmedDone: boolean;
-  companyConfirmedDone: boolean;
+  consumerApprovedAt: string | null;
+  fundedAt: string | null;
+  contractorCompletedAt: string | null;
+  acceptedAt: string | null;
+  revisionNote: string | null;
+  payment: MilestonePaymentInfo | null;
+  hold: MilestoneHoldInfo | null;
+  dispute: MilestoneDisputeInfo | null;
   createdAt: string;
 }
 
-/** Mirrors backend wallet/dto/WalletBalanceResponse. */
-export interface WalletBalanceResponse {
-  totalBalance: number;
-  availableBalance: number;
+/**
+ * Mirrors backend order/dto/MilestonePlanResponse. totalEstimatedAmount is the live plan total,
+ * NOT money paid - fundedAmount is what the consumer actually paid in.
+ */
+export interface MilestonePlanResponse {
+  orderId: number;
+  orderType: OrderType;
+  plannedStartDate: string | null;
+  plannedEndDate: string | null;
+  planStatus: MilestonePlanStatus | null;
+  planRejectionReason: string | null;
+  planApprovedAt: string | null;
+  currency: string;
+  totalEstimatedAmount: number;
+  fundedAmount: number;
+  remainingUnfundedAmount: number;
+  completedMilestones: number;
+  upcomingMilestones: number;
+  nextFundableMilestoneId: number | null;
+  milestones: OrderMilestoneResponse[];
 }
 
-/** Mirrors backend wallet/dto/WalletTransactionResponse. */
+/** Mirrors backend order/dto/MilestoneDisputeResponse - Admin Console > Disputes row. */
+export interface MilestoneDisputeResponse {
+  id: number;
+  orderId: number;
+  milestoneId: number;
+  milestoneTitle: string;
+  amount: number;
+  openedByUserId: number;
+  openedByName: string;
+  reason: string;
+  status: DisputeStatus;
+  resolutionNote: string | null;
+  openedAt: string;
+  resolvedAt: string | null;
+}
+
+export interface ResolveDisputeRequest {
+  resolution: DisputeResolution;
+  note: string;
+}
+
+/** Mirrors backend wallet/dto/ScheduledReleaseResponse - one HELD (or dispute-BLOCKED) contractor earning. */
+export interface ScheduledReleaseResponse {
+  holdId: number;
+  orderId: number | null;
+  milestoneId: number | null;
+  milestoneTitle: string | null;
+  amount: number;
+  currency: string;
+  holdStartAt: string;
+  releaseAt: string;
+  status: HoldStatus;
+}
+
+/** Mirrors backend wallet/dto/WalletBalanceResponse. totalBalance = available + frozen + reserved + pendingWithdrawal. */
+export interface WalletBalanceResponse {
+  currency: string;
+  /** FROZEN blocks withdrawals and hold releases. */
+  status: WalletStatus;
+  totalBalance: number;
+  availableBalance: number;
+  /** Contractor HELD earnings inside the 7-day hold. */
+  frozenBalance: number;
+  /** Consumer money locked against funded milestones. */
+  reservedBalance: number;
+  pendingWithdrawalBalance: number;
+  scheduledReleases: ScheduledReleaseResponse[];
+}
+
+/** Mirrors backend wallet/dto/WalletTransactionResponse. amount is signed; direction is for display. */
 export interface WalletTransactionResponse {
   id: number;
   ownerUserId: number;
   ownerName: string;
   type: WalletTransactionType;
+  bucket: WalletBucket | null;
+  direction: 'CREDIT' | 'DEBIT';
   amount: number;
+  currency: string;
   orderId: number | null;
-  availableAt: string | null;
+  milestoneId: number | null;
+  referenceType: string | null;
+  referenceId: number | null;
+  description: string | null;
   createdAt: string;
 }
 
@@ -142,6 +265,9 @@ export interface OrderResponse {
   scheduledAt: string | null;
   status: OrderStatus;
   orderType: OrderType;
+  plannedStartDate: string | null;
+  plannedEndDate: string | null;
+  milestonePlanStatus: MilestonePlanStatus | null;
   assignedCompanyId: number | null;
   assignedCompanyName: string | null;
   assignedWorkerId: number | null;
@@ -162,9 +288,21 @@ export interface OrderResponse {
 
 export interface AdminAssignOrderRequest {
   companyId: number;
+  /** Required by the backend for a ONE_TIME order with no accepted offer - becomes its single milestone's amount. */
+  agreedPrice?: number;
 }
 
-/** Mirrors backend order/dto/OrderBidResponse. */
+/** One milestone of a per-milestone priced bid (MEDIUM_TERM / LONG_TERM orders). */
+export interface OrderBidMilestoneResponse {
+  sequence: number;
+  title: string;
+  description: string | null;
+  amount: number;
+  startDate: string | null;
+  dueDate: string | null;
+}
+
+/** Mirrors backend order/dto/OrderBidResponse. For multi-stage orders price = sum of milestones. */
 export interface OrderBidResponse {
   id: number;
   orderId: number;
@@ -176,6 +314,8 @@ export interface OrderBidResponse {
   estimatedDeliveryAt: string;
   note: string | null;
   status: OrderBidStatus;
+  /** Empty for ONE_TIME orders. */
+  milestones: OrderBidMilestoneResponse[];
   createdAt: string;
   updatedAt: string;
 }
@@ -215,28 +355,60 @@ export interface ServiceItemRequest {
   active?: boolean;
 }
 
-/** Mirrors backend wallet/dto/WithdrawalRequestResponse. */
+/** Mirrors backend wallet/dto/WithdrawalRequestResponse (admin variant, with the full payout details). */
 export interface WithdrawalRequestResponse {
   id: number;
   ownerUserId: number;
   ownerName: string;
   amount: number;
+  currency: string;
+  bankAccountId: number | null;
+  bankName: string | null;
+  /** Masked number, e.g. "**** 1234". */
   bankAccountNumber: string;
+  accountHolderName: string | null;
+  fullAccountNumber: string | null;
   status: WithdrawalStatus;
+  payoutReference: string | null;
+  failureReason: string | null;
   adminNote: string | null;
   requestedAt: string;
   processedAt: string | null;
 }
 
-export interface UpdateWithdrawalStatusRequest {
-  status: 'PAID' | 'REJECTED';
-  adminNote?: string;
+/** COMPLETED requires payoutReference (the real bank transfer reference); FAILED/REJECTED require reason. */
+export type UpdateWithdrawalStatusRequest =
+  | { status: 'COMPLETED'; payoutReference: string; adminNote?: string }
+  | { status: 'FAILED' | 'REJECTED'; reason: string; adminNote?: string };
+
+/** Payment HayShen actually received (bank transfer, POS...). Idempotent per externalReference. */
+export interface AdminDepositRequest {
+  ownerUserId: number;
+  amount: number;
+  externalReference: string;
+  note?: string;
 }
 
+/** Compensating correction to AVAILABLE balance; amount is signed, note is mandatory. */
 export interface AdminWalletAdjustmentRequest {
   ownerUserId: number;
   amount: number;
-  note?: string;
+  note: string;
+}
+
+/** Mirrors backend wallet/dto/BankAccountResponse (admin variant: full accountNumber + owner). */
+export interface BankAccountResponse {
+  id: number;
+  userId: number;
+  userName: string;
+  holderName: string;
+  bankName: string;
+  maskedNumber: string;
+  accountNumber: string | null;
+  status: BankAccountStatus;
+  rejectionReason: string | null;
+  verifiedAt: string | null;
+  createdAt: string;
 }
 
 /** Mirrors backend contractor/dto/WorkerResponse — Admin Console > Company Details. */

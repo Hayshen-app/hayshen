@@ -1,42 +1,60 @@
-import { useState } from 'react';
-import { useAdjustWallet, useUpdateWithdrawal, useWithdrawals } from '@/admin/api/withdrawals';
+import { useState, type ReactNode } from 'react';
+import { useUpdateWithdrawal, useWithdrawals } from '@/admin/api/withdrawals';
 import DataTable, { type DataTableColumn } from '@/admin/components/DataTable';
 import StatusBadge from '@/admin/components/StatusBadge';
 import Modal from '@/admin/components/Modal';
+import { AdjustWalletModal, RecordDepositModal } from '@/admin/components/WalletModals';
 import { WITHDRAWAL_STATUSES, humanize, withdrawalStatusTone } from '@/admin/utils/constants';
+import { apiErrorMessage } from '@/admin/utils/errors';
 import { formatCurrency, formatDateTime } from '@/admin/utils/format';
-import { ApiError } from '@/api/client';
 import type { WithdrawalRequestResponse } from '@/admin/types';
 import type { WithdrawalStatus } from '@/types/enums';
+
+type Decision = 'COMPLETED' | 'FAILED' | 'REJECTED';
 
 function WithdrawalsPage() {
   const [status, setStatus] = useState<WithdrawalStatus | ''>('PENDING');
   const [page, setPage] = useState(0);
   const [target, setTarget] = useState<WithdrawalRequestResponse | null>(null);
-  const [showAdjustment, setShowAdjustment] = useState(false);
+  const [walletModal, setWalletModal] = useState<'deposit' | 'adjust' | null>(null);
 
   const { data, isLoading, isError, error } = useWithdrawals({ status: status || undefined, page, size: 20 });
 
   const columns: DataTableColumn<WithdrawalRequestResponse>[] = [
-    { key: 'ownerName', header: 'Owner' },
+    { key: 'ownerName', header: 'Owner', render: (row) => <>{row.ownerName} <span className="field__hint">#{row.ownerUserId}</span></> },
     { key: 'amount', header: 'Amount', render: (row) => formatCurrency(row.amount) },
-    { key: 'bankAccountNumber', header: 'Bank account' },
+    {
+      key: 'bank',
+      header: 'Payout account',
+      render: (row) => (
+        <div>
+          <div>{row.bankName || '—'}</div>
+          <div className="field__hint">
+            {row.accountHolderName || '—'} · {row.status === 'PENDING' ? row.fullAccountNumber || row.bankAccountNumber : row.bankAccountNumber}
+          </div>
+        </div>
+      ),
+    },
     {
       key: 'status',
       header: 'Status',
       render: (row) => <StatusBadge status={row.status} tone={withdrawalStatusTone(row.status)} />,
+    },
+    {
+      key: 'outcome',
+      header: 'Payout ref / reason',
+      render: (row) => row.payoutReference || row.failureReason || '—',
     },
     { key: 'requestedAt', header: 'Requested', render: (row) => formatDateTime(row.requestedAt) },
     { key: 'processedAt', header: 'Processed', render: (row) => formatDateTime(row.processedAt) },
     {
       key: 'actions',
       header: '',
-      render: (row) =>
-        row.status === 'PENDING' ? (
-          <button type="button" className="btn btn--secondary btn--sm" onClick={() => setTarget(row)}>
-            Process
-          </button>
-        ) : null,
+      render: (row) => (
+        <button type="button" className="btn btn--secondary btn--sm" onClick={() => setTarget(row)}>
+          {row.status === 'PENDING' ? 'Process' : 'Details'}
+        </button>
+      ),
     },
   ];
 
@@ -45,11 +63,19 @@ function WithdrawalsPage() {
       <div className="page-header">
         <div>
           <h1>Withdrawals</h1>
-          <p>Requests to move HAYSHEN WALLET funds to a personal bank account (v1 has no payment integration - process manually after wiring the money).</p>
+          <p>
+            Requests to move HAYSHEN WALLET funds to the user's verified bank account. There is no payout integration:
+            wire the money from the bank first, then mark the request paid with the bank's transfer reference.
+          </p>
         </div>
-        <button type="button" className="btn btn--secondary" onClick={() => setShowAdjustment(true)}>
-          Adjust wallet
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn--primary" onClick={() => setWalletModal('deposit')}>
+            Record received payment
+          </button>
+          <button type="button" className="btn btn--secondary" onClick={() => setWalletModal('adjust')}>
+            Balance correction
+          </button>
+        </div>
       </div>
 
       <div className="filter-bar">
@@ -84,151 +110,157 @@ function WithdrawalsPage() {
       />
 
       {target && <ProcessWithdrawalModal withdrawal={target} onClose={() => setTarget(null)} />}
-      {showAdjustment && <AdjustWalletModal onClose={() => setShowAdjustment(false)} />}
+      {walletModal === 'deposit' && <RecordDepositModal onClose={() => setWalletModal(null)} />}
+      {walletModal === 'adjust' && <AdjustWalletModal onClose={() => setWalletModal(null)} />}
     </div>
   );
 }
 
-function AdjustWalletModal({ onClose }: { onClose: () => void }) {
-  const [ownerUserId, setOwnerUserId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [error, setError] = useState('');
-  const mutation = useAdjustWallet();
-
-  const handleSubmit = async () => {
-    setError('');
-    const parsedOwnerId = Number(ownerUserId);
-    const parsedAmount = Number(amount);
-    if (!parsedOwnerId || Number.isNaN(parsedAmount) || parsedAmount === 0) {
-      setError('Enter a valid user id and a non-zero amount.');
-      return;
-    }
-    try {
-      await mutation.mutateAsync({ ownerUserId: parsedOwnerId, amount: parsedAmount, note: note || undefined });
-      onClose();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to adjust the wallet.');
-    }
-  };
-
-  return (
-    <Modal title="Adjust wallet" onClose={onClose}>
-      <p style={{ color: '#666', marginBottom: 16 }}>
-        Manually credit or debit a user's wallet - the only way money enters the ledger from outside the order
-        lifecycle in v1. Use a positive amount to credit (e.g. a payment collected off-platform), negative to debit.
-      </p>
-      {error && <div className="form-error">{error}</div>}
-      <div>
-        <div className="field">
-          <label htmlFor="adjustment-owner">User id</label>
-          <input
-            id="adjustment-owner"
-            type="number"
-            value={ownerUserId}
-            onChange={(event) => setOwnerUserId(event.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="adjustment-amount">Amount (AMD, signed)</label>
-          <input
-            id="adjustment-amount"
-            type="number"
-            step="0.01"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="adjustment-note">Note</label>
-          <textarea
-            id="adjustment-note"
-            maxLength={500}
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="e.g. cash payment collected in person on 2026-09-26"
-          />
-        </div>
-        <div className="form-actions">
-          <button type="button" className="btn btn--secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="btn btn--primary" disabled={mutation.isPending} onClick={handleSubmit}>
-            {mutation.isPending ? 'Saving…' : 'Apply'}
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
 function ProcessWithdrawalModal({ withdrawal, onClose }: { withdrawal: WithdrawalRequestResponse; onClose: () => void }) {
+  const isPending = withdrawal.status === 'PENDING';
+  const [decision, setDecision] = useState<Decision>('COMPLETED');
+  const [payoutReference, setPayoutReference] = useState('');
+  const [reason, setReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
   const [error, setError] = useState('');
   const mutation = useUpdateWithdrawal();
 
-  const handleDecision = async (decision: 'PAID' | 'REJECTED') => {
+  const handleSubmit = async () => {
     setError('');
+    const note = adminNote.trim() || undefined;
     try {
-      await mutation.mutateAsync({ id: withdrawal.id, status: decision, adminNote: adminNote || undefined });
+      if (decision === 'COMPLETED') {
+        if (!payoutReference.trim()) {
+          setError("Enter the bank's transfer reference. Only mark paid after the money has actually been sent.");
+          return;
+        }
+        await mutation.mutateAsync({
+          id: withdrawal.id,
+          ownerUserId: withdrawal.ownerUserId,
+          status: 'COMPLETED',
+          payoutReference: payoutReference.trim(),
+          adminNote: note,
+        });
+      } else {
+        if (!reason.trim()) {
+          setError('A reason is required - it is shown to the user.');
+          return;
+        }
+        await mutation.mutateAsync({
+          id: withdrawal.id,
+          ownerUserId: withdrawal.ownerUserId,
+          status: decision,
+          reason: reason.trim(),
+          adminNote: note,
+        });
+      }
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to update the withdrawal.');
+      setError(apiErrorMessage(err, 'Failed to update the withdrawal.'));
     }
   };
 
   return (
-    <Modal title={withdrawal.ownerName} onClose={onClose}>
-      <div className="detail-grid" style={{ marginBottom: 18 }}>
-        <div className="detail-item">
-          <div className="detail-item__label">Amount</div>
-          <div className="detail-item__value">{formatCurrency(withdrawal.amount)}</div>
-        </div>
-        <div className="detail-item">
-          <div className="detail-item__label">Bank account</div>
-          <div className="detail-item__value">{withdrawal.bankAccountNumber}</div>
-        </div>
-        <div className="detail-item">
-          <div className="detail-item__label">Requested</div>
-          <div className="detail-item__value">{formatDateTime(withdrawal.requestedAt)}</div>
-        </div>
+    <Modal title={`Withdrawal #${withdrawal.id} — ${withdrawal.ownerName}`} onClose={onClose} wide>
+      <div className="detail-grid payout-details">
+        <Detail label="Amount" value={<strong>{formatCurrency(withdrawal.amount)}</strong>} />
+        <Detail label="Status" value={<StatusBadge status={withdrawal.status} tone={withdrawalStatusTone(withdrawal.status)} />} />
+        <Detail label="Bank" value={withdrawal.bankName || '—'} />
+        <Detail label="Account holder" value={withdrawal.accountHolderName || '—'} />
+        <Detail
+          label="Account number"
+          value={<span className="payout-details__account">{withdrawal.fullAccountNumber || withdrawal.bankAccountNumber}</span>}
+        />
+        <Detail label="Owner user id" value={`#${withdrawal.ownerUserId}`} />
+        <Detail label="Requested" value={formatDateTime(withdrawal.requestedAt)} />
+        {!isPending && <Detail label="Processed" value={formatDateTime(withdrawal.processedAt)} />}
+        {withdrawal.payoutReference && <Detail label="Payout reference" value={withdrawal.payoutReference} />}
+        {withdrawal.failureReason && <Detail label="Reason" value={withdrawal.failureReason} />}
+        {withdrawal.adminNote && <Detail label="Admin note" value={withdrawal.adminNote} />}
       </div>
 
-      {error && <div className="form-error">{error}</div>}
-      <div>
-        <div className="field">
-          <label htmlFor="withdrawal-note">Note (optional)</label>
-          <textarea
-            id="withdrawal-note"
-            maxLength={500}
-            value={adminNote}
-            onChange={(event) => setAdminNote(event.target.value)}
-            placeholder="e.g. bank transfer reference, or reason for rejecting"
-          />
-        </div>
+      {!isPending ? (
         <div className="form-actions">
           <button type="button" className="btn btn--secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn btn--danger"
-            disabled={mutation.isPending}
-            onClick={() => handleDecision('REJECTED')}
-          >
-            Reject
-          </button>
-          <button
-            type="button"
-            className="btn btn--primary"
-            disabled={mutation.isPending}
-            onClick={() => handleDecision('PAID')}
-          >
-            {mutation.isPending ? 'Saving…' : 'Mark paid'}
+            Close
           </button>
         </div>
-      </div>
+      ) : (
+        <>
+          {error && <div className="form-error">{error}</div>}
+          <div className="field">
+            <label htmlFor="withdrawal-decision">Outcome</label>
+            <select id="withdrawal-decision" value={decision} onChange={(event) => setDecision(event.target.value as Decision)}>
+              <option value="COMPLETED">Paid - money was transferred</option>
+              <option value="FAILED">Failed - the bank transfer bounced / failed</option>
+              <option value="REJECTED">Rejected - will not be paid</option>
+            </select>
+            <span className="field__hint">
+              {decision === 'COMPLETED'
+                ? 'The amount leaves the wallet permanently.'
+                : 'The amount goes back to the user’s available balance.'}
+            </span>
+          </div>
+
+          {decision === 'COMPLETED' ? (
+            <div className="field">
+              <label htmlFor="withdrawal-payout-ref">Bank transfer reference</label>
+              <input
+                id="withdrawal-payout-ref"
+                maxLength={120}
+                value={payoutReference}
+                onChange={(event) => setPayoutReference(event.target.value)}
+                placeholder="Reference from the bank's payment confirmation"
+              />
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor="withdrawal-reason">Reason (shown to the user)</label>
+              <textarea
+                id="withdrawal-reason"
+                maxLength={500}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="field">
+            <label htmlFor="withdrawal-note">Internal note (optional)</label>
+            <textarea id="withdrawal-note" maxLength={500} value={adminNote} onChange={(event) => setAdminNote(event.target.value)} />
+          </div>
+
+          <div className="form-actions">
+            <button type="button" className="btn btn--secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={decision === 'COMPLETED' ? 'btn btn--primary' : 'btn btn--danger'}
+              disabled={mutation.isPending}
+              onClick={handleSubmit}
+            >
+              {mutation.isPending
+                ? 'Saving…'
+                : decision === 'COMPLETED'
+                  ? 'Mark paid'
+                  : decision === 'FAILED'
+                    ? 'Mark failed'
+                    : 'Reject'}
+            </button>
+          </div>
+        </>
+      )}
     </Modal>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="detail-item">
+      <div className="detail-item__label">{label}</div>
+      <div className="detail-item__value">{value}</div>
+    </div>
   );
 }
 

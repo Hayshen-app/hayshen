@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, Truck, Users, Wallet } from 'lucide-react';
 import { useCompany, useCompanyOrders, useCompanyVehicles, useCompanyWorkers } from '@/admin/api/companies';
-import { useUserBalance, useUserTransactions } from '@/admin/api/withdrawals';
+import { useUserBalance } from '@/admin/api/withdrawals';
 import DataTable, { type DataTableColumn } from '@/admin/components/DataTable';
 import StatCard from '@/admin/components/StatCard';
 import StatusBadge from '@/admin/components/StatusBadge';
 import CompanyLogo from '@/admin/components/CompanyLogo';
 import VerifyCompanyModal from '@/admin/components/VerifyCompanyModal';
+import WalletPanel from '@/admin/components/WalletPanel';
 import { orderStatusTone, verificationStatusTone } from '@/admin/utils/constants';
 import { formatCurrency, formatDateTime, formatNumber } from '@/admin/utils/format';
 import type { VehicleResponse, WorkerResponse } from '@/admin/types';
@@ -22,12 +23,6 @@ function CompanyDetailPage() {
   const [ordersPage, setOrdersPage] = useState(0);
   const { data: orders, isLoading: ordersLoading, isError: ordersError } = useCompanyOrders(id, { page: ordersPage });
   const { data: balance } = useUserBalance(company?.ownerId);
-  const [paymentsPage, setPaymentsPage] = useState(0);
-  const {
-    data: payments,
-    isLoading: paymentsLoading,
-    isError: paymentsError,
-  } = useUserTransactions(company?.ownerId, { page: paymentsPage });
   const [showVerify, setShowVerify] = useState(false);
 
   return (
@@ -73,8 +68,9 @@ function CompanyDetailPage() {
               <div className="detail-grid">
                 <Detail label="City" value={company.city} />
                 <Detail label="Rating" value={company.rating != null ? company.rating.toFixed(2) : '—'} />
-                <Detail label="Total balance" value={formatCurrency(balance?.totalBalance ?? null)} />
-                <Detail label="Available balance" value={formatCurrency(balance?.availableBalance ?? null)} />
+                <Detail label="Owner user id" value={`#${company.ownerId}`} />
+                <Detail label="Total wallet balance" value={formatCurrency(balance?.totalBalance ?? null)} />
+                <Detail label="Frozen (7-day hold)" value={formatCurrency(balance?.frozenBalance ?? null)} />
                 <Detail label="Registered" value={formatDateTime(company.createdAt)} />
               </div>
             </div>
@@ -177,43 +173,11 @@ function CompanyDetailPage() {
               />
             </div>
 
-            <div className="card">
-              <h2 className="company-detail__section-title">Payments</h2>
-              <DataTable
-                columns={[
-                  {
-                    key: 'type',
-                    header: 'Type',
-                    render: (tx) => (
-                      <StatusBadge status={tx.type} tone={tx.type === 'RELEASE' || tx.type === 'REFUND' ? 'success' : 'neutral'} />
-                    ),
-                  },
-                  {
-                    key: 'amount',
-                    header: 'Amount',
-                    render: (tx) => (
-                      <span className={tx.amount < 0 ? 'company-detail__amount--negative' : 'company-detail__amount--positive'}>
-                        {tx.amount > 0 ? '+' : ''}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                    ),
-                  },
-                  { key: 'orderId', header: 'Order', render: (tx) => (tx.orderId ? `#${tx.orderId}` : '—') },
-                  { key: 'availableAt', header: 'Available at', render: (tx) => formatDateTime(tx.availableAt) },
-                  { key: 'createdAt', header: 'Recorded at', render: (tx) => formatDateTime(tx.createdAt) },
-                ]}
-                rows={payments?.items}
-                rowKey={(tx) => tx.id}
-                isLoading={paymentsLoading}
-                isError={paymentsError}
-                errorMessage="Failed to load payment history."
-                emptyMessage="No wallet activity recorded for this company yet."
-                page={payments?.page ?? paymentsPage}
-                totalPages={payments?.totalPages ?? 1}
-                totalElements={payments?.totalElements ?? 0}
-                onPageChange={setPaymentsPage}
-              />
-            </div>
+            <WalletPanel
+              userId={company.ownerId}
+              ownerName={`${company.ownerName} (${company.companyName})`}
+              emptyMessage="No wallet activity recorded for this company yet."
+            />
           </div>
 
           {showVerify && <VerifyCompanyModal company={company} onClose={() => setShowVerify(false)} />}

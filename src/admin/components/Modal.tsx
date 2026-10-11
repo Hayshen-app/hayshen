@@ -5,9 +5,11 @@ interface ModalProps {
   title: ReactNode;
   onClose: () => void;
   children: ReactNode;
+  /** Wider dialog for tables / payout details. */
+  wide?: boolean;
 }
 
-function Modal({ title, onClose, children }: ModalProps) {
+function Modal({ title, onClose, children, wide = false }: ModalProps) {
   const titleId = useId();
 
   const handleOverlayClick = (event: MouseEvent<HTMLDivElement>) => {
@@ -18,7 +20,7 @@ function Modal({ title, onClose, children }: ModalProps) {
 
   return (
     <div className="modal-overlay" onMouseDown={handleOverlayClick}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className={wide ? 'modal modal--wide' : 'modal'} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <div className="modal__header">
           <h2 id={titleId}>{title}</h2>
           <button type="button" className="modal__close" onClick={onClose} aria-label="Close">

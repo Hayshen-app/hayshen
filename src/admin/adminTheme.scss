@@ -505,3 +505,34 @@ table.table {
     color: $admin-ink;
   }
 }
+
+// ---- Wallet / payouts --------------------------------------------------
+
+// Wide modals (wallet details, payout details) - opt-in on top of .modal.
+.modal--wide {
+  width: min(960px, calc(100vw - 32px));
+  max-width: none;
+}
+
+.payout-details {
+  margin-bottom: 18px;
+
+  .detail-item__value {
+    word-break: break-all;
+  }
+
+  &__account {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+  }
+}
+
+.admin-note {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  background: rgba(230, 160, 30, 0.1);
+  color: #7a5200;
+  font-size: 13px;
+}
