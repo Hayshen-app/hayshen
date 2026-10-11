@@ -14,6 +14,15 @@ import WithdrawalsPage from '@/admin/pages/WithdrawalsPage';
 import BankAccountsPage from '@/admin/pages/BankAccountsPage';
 import DisputesPage from '@/admin/pages/DisputesPage';
 import SettingsPage from '@/admin/pages/SettingsPage';
+import MaterialStoresPage from '@/admin/pages/MaterialStoresPage';
+import MaterialStoreDetailPage from '@/admin/pages/MaterialStoreDetailPage';
+import MaterialCategoriesPage from '@/admin/pages/MaterialCategoriesPage';
+import MaterialCatalogPage from '@/admin/pages/MaterialCatalogPage';
+import MaterialRequestsPage from '@/admin/pages/MaterialRequestsPage';
+import MaterialRequestDetailPage from '@/admin/pages/MaterialRequestDetailPage';
+import SupplierOrdersPage from '@/admin/pages/SupplierOrdersPage';
+import SupplierOrderDetailPage from '@/admin/pages/SupplierOrderDetailPage';
+import MaterialDisputesPage from '@/admin/pages/MaterialDisputesPage';
 import type { UserRole } from '@/types/enums';
 import '@/admin/adminTheme.scss';
 
@@ -65,6 +74,15 @@ function AdminApp() {
         <Route path="withdrawals" element={<WithdrawalsPage />} />
         <Route path="bank-accounts" element={<BankAccountsPage />} />
         <Route path="disputes" element={<DisputesPage />} />
+        <Route path="material-stores" element={<MaterialStoresPage />} />
+        <Route path="material-stores/:id" element={<MaterialStoreDetailPage />} />
+        <Route path="material-categories" element={<MaterialCategoriesPage />} />
+        <Route path="material-catalog" element={<MaterialCatalogPage />} />
+        <Route path="material-requests" element={<MaterialRequestsPage />} />
+        <Route path="material-requests/:id" element={<MaterialRequestDetailPage />} />
+        <Route path="supplier-orders" element={<SupplierOrdersPage />} />
+        <Route path="supplier-orders/:id" element={<SupplierOrderDetailPage />} />
+        <Route path="material-disputes" element={<MaterialDisputesPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />

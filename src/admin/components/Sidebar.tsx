@@ -1,13 +1,19 @@
 import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
+  Boxes,
   Building2,
   ClipboardList,
   Gavel,
   Landmark,
   LayoutDashboard,
   Layers,
+  PackageSearch,
+  Scale,
   Settings,
+  Store,
+  Tags,
+  Truck,
   Users,
   Wallet,
   type LucideProps,
@@ -37,6 +43,17 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/admin/companies', label: 'Companies', icon: Building2 },
       { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
       { to: '/admin/categories', label: 'Categories', icon: Layers },
+    ],
+  },
+  {
+    label: 'Materials',
+    items: [
+      { to: '/admin/material-stores', label: 'Stores', icon: Store },
+      { to: '/admin/material-requests', label: 'Requests', icon: PackageSearch },
+      { to: '/admin/supplier-orders', label: 'Supplier orders', icon: Truck },
+      { to: '/admin/material-disputes', label: 'Material disputes', icon: Scale },
+      { to: '/admin/material-catalog', label: 'Catalog', icon: Boxes },
+      { to: '/admin/material-categories', label: 'Material categories', icon: Tags },
     ],
   },
   {

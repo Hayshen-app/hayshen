@@ -1,5 +1,7 @@
-import { Building2, ClipboardList, ShieldCheck, Clock3, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Building2, ClipboardList, ShieldCheck, Clock3, Scale, Store, Truck, Users } from 'lucide-react';
 import { useDashboard } from '@/admin/api/dashboard';
+import { useMaterialDisputes, useMaterialStores, useSupplierOrders } from '@/admin/api/materials';
 import StatCard from '@/admin/components/StatCard';
 import { humanize, orderStatusTone } from '@/admin/utils/constants';
 import { formatNumber } from '@/admin/utils/format';
@@ -45,6 +47,34 @@ function DashboardPage() {
           </div>
         </>
       )}
+
+      <MaterialsCounters />
+    </div>
+  );
+}
+
+/** Materials marketplace counters from the list endpoints' totalElements (size 1 keeps them cheap). */
+function MaterialsCounters() {
+  const pendingStores = useMaterialStores({ status: 'PENDING', size: 1 });
+  const disputes = useMaterialDisputes({ size: 1 });
+  const awaitingPayment = useSupplierOrders({ status: 'AWAITING_PAYMENT', size: 1 });
+  const count = (query: { data?: { totalElements: number }; isError: boolean }) =>
+    query.isError ? '—' : formatNumber(query.data?.totalElements ?? null);
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <h2 className="dashboard-section-title">Materials</h2>
+      <div className="stat-grid">
+        <Link to="/admin/material-stores">
+          <StatCard icon={<Store size={20} />} label="Stores to verify" value={count(pendingStores)} />
+        </Link>
+        <Link to="/admin/material-disputes">
+          <StatCard icon={<Scale size={20} />} label="Open material disputes" value={count(disputes)} />
+        </Link>
+        <Link to="/admin/supplier-orders">
+          <StatCard icon={<Truck size={20} />} label="Supplier orders awaiting payment" value={count(awaitingPayment)} />
+        </Link>
+      </div>
     </div>
   );
 }
