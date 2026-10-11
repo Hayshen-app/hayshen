@@ -32,11 +32,6 @@ export const ORDER_STATUSES: OrderStatus[] = [
   'CANCELLED',
 ];
 
-// Statuses a SUBMITTED (or REJECTED, for a re-dispatch) order can move out of
-// via the manual admin dispatch action. See OrderStatus.java for the full
-// lifecycle diagram.
-export const DISPATCHABLE_ORDER_STATUSES: OrderStatus[] = ['SUBMITTED', 'REJECTED'];
-
 export const WITHDRAWAL_STATUSES: WithdrawalStatus[] = ['PENDING', 'COMPLETED', 'FAILED', 'REJECTED'];
 
 export const BANK_ACCOUNT_STATUSES: BankAccountStatus[] = ['PENDING_VERIFICATION', 'VERIFIED', 'REJECTED', 'REMOVED'];

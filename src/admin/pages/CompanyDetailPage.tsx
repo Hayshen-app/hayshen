@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, Truck, Users, Wallet } from 'lucide-react';
-import { useCompany, useCompanyOrders, useCompanyVehicles, useCompanyWorkers } from '@/admin/api/companies';
+import { useCompany, useCompanyOrders, useCompanyVehicles, useCompanyWorkerHistory } from '@/admin/api/companies';
 import { useUserBalance } from '@/admin/api/withdrawals';
 import DataTable, { type DataTableColumn } from '@/admin/components/DataTable';
 import StatCard from '@/admin/components/StatCard';
@@ -9,16 +9,17 @@ import StatusBadge from '@/admin/components/StatusBadge';
 import CompanyLogo from '@/admin/components/CompanyLogo';
 import VerifyCompanyModal from '@/admin/components/VerifyCompanyModal';
 import WalletPanel from '@/admin/components/WalletPanel';
+import WorkerHistoryPanel from '@/admin/components/WorkerHistoryPanel';
 import { orderStatusTone, verificationStatusTone } from '@/admin/utils/constants';
 import { formatCurrency, formatDateTime, formatNumber } from '@/admin/utils/format';
-import type { VehicleResponse, WorkerResponse } from '@/admin/types';
+import type { VehicleResponse } from '@/admin/types';
 import '@/admin/pages/companyDetailPage.scss';
 
 function CompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: company, isLoading, isError, error } = useCompany(id);
-  const { data: workers, isLoading: workersLoading, isError: workersError } = useCompanyWorkers(id);
+  const { data: workerHistory, isLoading: workersLoading, isError: workersError } = useCompanyWorkerHistory(id);
   const { data: vehicles, isLoading: vehiclesLoading, isError: vehiclesError } = useCompanyVehicles(id);
   const [ordersPage, setOrdersPage] = useState(0);
   const { data: orders, isLoading: ordersLoading, isError: ordersError } = useCompanyOrders(id, { page: ordersPage });
@@ -56,7 +57,7 @@ function CompanyDetailPage() {
           </div>
 
           <div className="stat-grid">
-            <StatCard icon={<Users size={20} />} label="Workers" value={String(workers?.length ?? 0)} />
+            <StatCard icon={<Users size={20} />} label="Workers" value={String(workerHistory?.length ?? 0)} />
             <StatCard icon={<Truck size={20} />} label="Vehicles" value={String(vehicles?.length ?? 0)} />
             <StatCard icon={<ClipboardList size={20} />} label="Jobs completed" value={formatNumber(company.totalJobsCompleted)} />
             <StatCard icon={<Wallet size={20} />} label="Available balance" value={formatCurrency(balance?.availableBalance ?? null)} />
@@ -76,32 +77,8 @@ function CompanyDetailPage() {
             </div>
 
             <div className="card">
-              <h2 className="company-detail__section-title">Workers</h2>
-              <DataTable
-                columns={
-                  [
-                    { key: 'fullName', header: 'Name' },
-                    { key: 'title', header: 'Title', render: (w) => w.title || '—' },
-                    { key: 'phone', header: 'Phone', render: (w) => w.phone || '—' },
-                    {
-                      key: 'rating',
-                      header: 'Rating',
-                      render: (w) => (w.rating != null ? `${w.rating.toFixed(1)} (${w.ratingCount})` : '—'),
-                    },
-                    {
-                      key: 'status',
-                      header: 'Status',
-                      render: (w) => <StatusBadge status={w.status} tone={w.status === 'ACTIVE' ? 'success' : 'neutral'} />,
-                    },
-                  ] as DataTableColumn<WorkerResponse>[]
-                }
-                rows={workers}
-                rowKey={(w) => w.id}
-                isLoading={workersLoading}
-                isError={workersError}
-                errorMessage="Failed to load workers."
-                emptyMessage="No workers added by this company yet."
-              />
+              <h2 className="company-detail__section-title">Workers, job history and ratings</h2>
+              <WorkerHistoryPanel history={workerHistory} isLoading={workersLoading} isError={workersError} />
             </div>
 
             <div className="card">

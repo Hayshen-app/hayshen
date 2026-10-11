@@ -5,6 +5,7 @@ import type {
   OrderSummaryResponse,
   VehicleResponse,
   VerifyCompanyRequest,
+  WorkerHistoryResponse,
   WorkerResponse,
 } from '@/admin/types';
 import type { PageResponse } from '@/types/api';
@@ -57,6 +58,15 @@ export function useCompanyWorkers(id: string | number | undefined) {
   return useQuery({
     queryKey: ['admin', 'company', String(id), 'workers'],
     queryFn: () => request<WorkerResponse[]>(`/admin/companies/${id}/workers`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCompanyWorkerHistory(id: string | number | undefined) {
+  const request = useAuthorizedRequest();
+  return useQuery({
+    queryKey: ['admin', 'company', String(id), 'workers', 'history'],
+    queryFn: () => request<WorkerHistoryResponse[]>(`/admin/companies/${id}/workers/history`),
     enabled: Boolean(id),
   });
 }

@@ -49,7 +49,7 @@ function OrdersPage() {
       <div className="page-header">
         <div>
           <h1>Orders</h1>
-          <p>Monitor orders and manually dispatch new submissions.</p>
+          <p>Monitor orders and their progress.</p>
         </div>
       </div>
 

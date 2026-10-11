@@ -148,7 +148,16 @@ export interface OrderMilestoneResponse {
   payment: MilestonePaymentInfo | null;
   hold: MilestoneHoldInfo | null;
   dispute: MilestoneDisputeInfo | null;
+  workers?: MilestoneWorkerInfo[]; // the company's crew on this stage
   createdAt: string;
+}
+
+export interface MilestoneWorkerInfo {
+  id: number;
+  fullName: string;
+  phone: string | null;
+  title: string | null;
+  photoUrl: string | null;
 }
 
 /**
@@ -434,6 +443,43 @@ export interface WorkerResponse {
   addressLongitude: number | null;
   rating: number | null;
   ratingCount: number;
+}
+
+/** Mirrors backend admin/dto/AdminWorkerHistoryResponse — a worker and every job they were attached to. */
+export interface WorkerHistoryResponse {
+  worker: WorkerResponse;
+  totalJobs: number;
+  completedJobs: number;
+  jobs: WorkerJob[];
+}
+
+export interface WorkerJob {
+  orderId: number;
+  categoryName: string;
+  serviceItemName: string | null;
+  orderType: OrderType;
+  orderStatus: OrderStatus;
+  customerName: string;
+  addressCity: string | null;
+  finalPrice: number | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  assignedWorker: boolean; // the order-level assigned worker
+  milestones: WorkerJobMilestone[]; // milestones this worker was on the crew of
+  workerRating: number | null; // customer's rating of this worker
+  workerComment: string | null;
+  orderRating: number | null; // customer's rating of the company for this order
+  orderComment: string | null;
+}
+
+export interface WorkerJobMilestone {
+  id: number;
+  sequence: number;
+  title: string;
+  status: MilestoneStatus;
+  amount: number;
+  dueDate: string | null;
 }
 
 /** Mirrors backend contractor/dto/VehicleResponse — Admin Console > Company Details. */
