@@ -1,6 +1,17 @@
 import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Building2, ClipboardList, LayoutDashboard, Layers, Settings, Users, Wallet, type LucideProps } from 'lucide-react';
+import {
+  Building2,
+  ClipboardList,
+  Gavel,
+  Landmark,
+  LayoutDashboard,
+  Layers,
+  Settings,
+  Users,
+  Wallet,
+  type LucideProps,
+} from 'lucide-react';
 import '@/admin/components/sidebar.scss';
 
 interface NavItem {
@@ -30,7 +41,11 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Finance',
-    items: [{ to: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet }],
+    items: [
+      { to: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
+      { to: '/admin/bank-accounts', label: 'Bank accounts', icon: Landmark },
+      { to: '/admin/disputes', label: 'Disputes', icon: Gavel },
+    ],
   },
   {
     label: 'Administration',

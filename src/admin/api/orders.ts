@@ -45,14 +45,15 @@ export function useDispatchOrder() {
   const request = useAuthorizedRequest();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, companyId }: DispatchOrderParams) =>
+    mutationFn: ({ id, companyId, agreedPrice }: DispatchOrderParams) =>
       request<OrderResponse>(`/admin/orders/${id}/dispatch`, {
         method: 'PUT',
-        body: { companyId } satisfies AdminAssignOrderRequest,
+        body: { companyId, agreedPrice } satisfies AdminAssignOrderRequest,
       }),
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'order', String(id)] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'orderMilestones', id] });
     },
   });
 }

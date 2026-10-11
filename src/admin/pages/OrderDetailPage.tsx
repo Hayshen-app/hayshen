@@ -2,13 +2,26 @@ import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Banknote, Handshake, Milestone, Receipt } from 'lucide-react';
 import { useOrder, useOrderBids } from '@/admin/api/orders';
-import { useOrderPayments } from '@/admin/api/withdrawals';
+import { useOrderMilestonePlan, useOrderPayments } from '@/admin/api/withdrawals';
 import DataTable from '@/admin/components/DataTable';
+import ResolveDisputeModal from '@/admin/components/ResolveDisputeModal';
+import { ledgerColumns } from '@/admin/components/WalletPanel';
 import StatCard from '@/admin/components/StatCard';
 import StatusBadge from '@/admin/components/StatusBadge';
 import DispatchModal from '@/admin/pages/DispatchModal';
-import { DISPATCHABLE_ORDER_STATUSES, humanize, orderBidStatusTone, orderStatusTone } from '@/admin/utils/constants';
-import { formatCurrency, formatDateTime } from '@/admin/utils/format';
+import {
+  DISPATCHABLE_ORDER_STATUSES,
+  disputeStatusTone,
+  holdStatusTone,
+  humanize,
+  milestoneStatusTone,
+  orderBidStatusTone,
+  orderStatusTone,
+  orderTypeLabel,
+  paymentStatusTone,
+} from '@/admin/utils/constants';
+import { formatCurrency, formatDate, formatDateTime } from '@/admin/utils/format';
+import type { OrderMilestoneResponse } from '@/admin/types';
 import '@/admin/pages/orderDetailPage.scss';
 
 function OrderDetailPage() {
@@ -18,9 +31,17 @@ function OrderDetailPage() {
   const { data: payments, isLoading: paymentsLoading, isError: paymentsError } = useOrderPayments(
     order ? Number(order.id) : undefined,
   );
+  const {
+    data: plan,
+    isLoading: planLoading,
+    isError: planError,
+    error: planErrorDetail,
+  } = useOrderMilestonePlan(order ? Number(order.id) : undefined);
   const [showDispatch, setShowDispatch] = useState(false);
+  const [disputeTarget, setDisputeTarget] = useState<OrderMilestoneResponse | null>(null);
 
-  const milestonesDone = order?.milestones.filter((m) => m.status === 'DONE').length ?? 0;
+  const milestones = plan?.milestones ?? order?.milestones ?? [];
+  const milestonesAccepted = milestones.filter((m) => m.status === 'ACCEPTED').length;
 
   return (
     <div>
@@ -55,8 +76,8 @@ function OrderDetailPage() {
             <StatCard icon={<Handshake size={20} />} label="Bids received" value={String(bids?.length ?? 0)} />
             <StatCard
               icon={<Milestone size={20} />}
-              label="Milestones done"
-              value={order.milestones.length ? `${milestonesDone} / ${order.milestones.length}` : '—'}
+              label="Milestones accepted"
+              value={milestones.length ? `${milestonesAccepted} / ${milestones.length}` : '—'}
             />
             <StatCard icon={<Receipt size={20} />} label="Payments recorded" value={String(payments?.length ?? 0)} />
           </div>
@@ -98,7 +119,14 @@ function OrderDetailPage() {
                 <div>
                   <h3 className="order-detail__group-title">Assignment & pricing</h3>
                   <div className="detail-grid">
-                    <Detail label="Order type" value={humanize(order.orderType)} />
+                    <Detail label="Order type" value={orderTypeLabel(order.orderType)} />
+                    {(order.plannedStartDate || order.plannedEndDate) && (
+                      <Detail
+                        label="Planned period"
+                        value={`${formatDate(order.plannedStartDate)} → ${formatDate(order.plannedEndDate)}`}
+                      />
+                    )}
+                    <Detail label="Milestone plan" value={humanize(order.milestonePlanStatus) || '—'} />
                     <Detail label="Company" value={order.assignedCompanyName || 'Not assigned'} />
                     <Detail label="Worker" value={order.assignedWorkerName || 'Not assigned'} />
                     <Detail label="Customer confirmed done" value={order.customerConfirmedDone ? 'Yes' : 'No'} />
@@ -132,7 +160,36 @@ function OrderDetailPage() {
                     render: (bid) =>
                       bid.companyRating == null ? '—' : `${bid.companyRating.toFixed(1)} (${bid.companyRatingCount})`,
                   },
-                  { key: 'price', header: 'Price', render: (bid) => formatCurrency(bid.price) },
+                  {
+                    key: 'price',
+                    header: 'Price',
+                    render: (bid) =>
+                      bid.milestones?.length ? (
+                        <details className="order-detail__bid-milestones">
+                          <summary>
+                            {formatCurrency(bid.price)}{' '}
+                            <span className="order-detail__muted">({bid.milestones.length} milestones)</span>
+                          </summary>
+                          <ol>
+                            {[...bid.milestones]
+                              .sort((a, b) => a.sequence - b.sequence)
+                              .map((m) => (
+                                <li key={m.sequence}>
+                                  <strong>{m.title}</strong> — {formatCurrency(m.amount)}
+                                  {(m.startDate || m.dueDate) && (
+                                    <div className="order-detail__muted">
+                                      {formatDate(m.startDate)} → {formatDate(m.dueDate)}
+                                    </div>
+                                  )}
+                                  {m.description && <div className="order-detail__muted">{m.description}</div>}
+                                </li>
+                              ))}
+                          </ol>
+                        </details>
+                      ) : (
+                        formatCurrency(bid.price)
+                      ),
+                  },
                   {
                     key: 'estimatedDeliveryAt',
                     header: 'Estimated delivery',
@@ -161,67 +218,146 @@ function OrderDetailPage() {
               />
             </div>
 
-            {order.milestones.length > 0 && (
-              <div className="card">
-                <h2 className="order-detail__section-title">Payment plan (milestones)</h2>
-                <p className="order-detail__section-note">
-                  {milestonesDone} of {order.milestones.length} phases paid out ·{' '}
-                  {formatCurrency(order.milestones.reduce((sum, m) => sum + m.amount, 0))} total across all phases
-                </p>
-                <DataTable
-                  columns={[
-                    { key: 'sequence', header: '#' },
-                    { key: 'title', header: 'Phase' },
-                    { key: 'amount', header: 'Amount', render: (m) => formatCurrency(m.amount) },
-                    {
-                      key: 'status',
-                      header: 'Status',
-                      render: (m) => <StatusBadge status={m.status} tone={m.status === 'DONE' ? 'success' : 'warning'} />,
-                    },
-                    {
-                      key: 'customerConfirmedDone',
-                      header: 'Customer confirmed',
-                      render: (m) => (m.customerConfirmedDone ? 'Yes' : 'No'),
-                    },
-                    {
-                      key: 'companyConfirmedDone',
-                      header: 'Company confirmed',
-                      render: (m) => (m.companyConfirmedDone ? 'Yes' : 'No'),
-                    },
-                    { key: 'createdAt', header: 'Proposed at', render: (m) => formatDateTime(m.createdAt) },
-                  ]}
-                  rows={order.milestones}
-                  rowKey={(m) => m.id}
-                  emptyMessage="No payment phases defined for this order."
-                />
-              </div>
-            )}
+            <div className="card">
+              <h2 className="order-detail__section-title">Milestones & payments</h2>
+              {planLoading && <div className="table-state">Loading milestone plan…</div>}
+              {planError && (
+                <div className="table-state table-state--error">
+                  {planErrorDetail?.message || 'Failed to load the milestone plan.'}
+                </div>
+              )}
+              {plan && (
+                <>
+                  <div className="detail-grid" style={{ marginBottom: 14 }}>
+                    <Detail
+                      label="Plan status"
+                      value={
+                        <>
+                          {humanize(plan.planStatus) || '—'}
+                          {plan.planApprovedAt && (
+                            <div className="order-detail__muted">Approved {formatDateTime(plan.planApprovedAt)}</div>
+                          )}
+                          {plan.planRejectionReason && (
+                            <div className="order-detail__muted">Rejected: {plan.planRejectionReason}</div>
+                          )}
+                        </>
+                      }
+                    />
+                    <Detail label="Plan total (estimated)" value={formatCurrency(plan.totalEstimatedAmount)} />
+                    <Detail label="Funded by customer" value={formatCurrency(plan.fundedAmount)} />
+                    <Detail label="Remaining unfunded" value={formatCurrency(plan.remainingUnfundedAmount)} />
+                    <Detail
+                      label="Completed / upcoming"
+                      value={`${plan.completedMilestones} / ${plan.upcomingMilestones}`}
+                    />
+                    <Detail
+                      label="Next fundable"
+                      value={
+                        plan.nextFundableMilestoneId
+                          ? `#${plan.milestones.find((m) => m.id === plan.nextFundableMilestoneId)?.sequence ?? '?'} (id ${plan.nextFundableMilestoneId})`
+                          : '—'
+                      }
+                    />
+                  </div>
+                  <p className="order-detail__section-note">
+                    The plan total is what the live plan will cost, not money paid. Each milestone is funded separately by
+                    the customer; accepted milestones go into the contractor's 7-day hold before becoming withdrawable.
+                  </p>
+                  <DataTable
+                    columns={[
+                      { key: 'sequence', header: '#' },
+                      {
+                        key: 'title',
+                        header: 'Milestone',
+                        render: (m) => (
+                          <div>
+                            <div>{m.title}</div>
+                            {(m.startDate || m.dueDate) && (
+                              <div className="order-detail__muted">
+                                {formatDate(m.startDate)} → {formatDate(m.dueDate)}
+                              </div>
+                            )}
+                            {m.revisionNote && <div className="order-detail__muted">Revision: {m.revisionNote}</div>}
+                          </div>
+                        ),
+                      },
+                      { key: 'amount', header: 'Amount', render: (m) => formatCurrency(m.amount) },
+                      {
+                        key: 'status',
+                        header: 'Status',
+                        render: (m) => <StatusBadge status={m.status} tone={milestoneStatusTone(m.status)} />,
+                      },
+                      {
+                        key: 'payment',
+                        header: 'Payment',
+                        render: (m) =>
+                          m.payment ? (
+                            <div>
+                              <StatusBadge status={m.payment.status} tone={paymentStatusTone(m.payment.status)} />
+                              <div className="order-detail__muted">
+                                {m.payment.providerReference || `#${m.payment.id}`} · funded {formatDateTime(m.payment.fundedAt)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="order-detail__muted">Not funded</span>
+                          ),
+                      },
+                      {
+                        key: 'hold',
+                        header: 'Contractor hold',
+                        render: (m) =>
+                          m.hold ? (
+                            <div>
+                              <StatusBadge status={m.hold.status} tone={holdStatusTone(m.hold.status)} />
+                              <div className="order-detail__muted">releases {formatDateTime(m.hold.releaseAt)}</div>
+                            </div>
+                          ) : (
+                            '—'
+                          ),
+                      },
+                      {
+                        key: 'dispute',
+                        header: 'Dispute',
+                        render: (m) =>
+                          m.dispute ? (
+                            <div>
+                              <StatusBadge status={m.dispute.status} tone={disputeStatusTone(m.dispute.status)} />
+                              <div className="order-detail__muted">
+                                Opened by {m.dispute.openedByName || (m.dispute.openedByUserId ? `user #${m.dispute.openedByUserId}` : '—')}
+                                {m.dispute.openedAt && ` · ${formatDateTime(m.dispute.openedAt)}`}
+                              </div>
+                              {m.dispute.reason && <div className="order-detail__muted">{m.dispute.reason}</div>}
+                              {m.dispute.resolutionNote && (
+                                <div className="order-detail__muted">Resolution: {m.dispute.resolutionNote}</div>
+                              )}
+                              {m.dispute.status === 'OPEN' && (
+                                <button
+                                  type="button"
+                                  className="btn btn--primary btn--sm"
+                                  style={{ marginTop: 6 }}
+                                  onClick={() => setDisputeTarget(m)}
+                                >
+                                  Resolve
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            '—'
+                          ),
+                      },
+                    ]}
+                    rows={plan.milestones}
+                    rowKey={(m) => m.id}
+                    emptyMessage="No milestones defined for this order yet."
+                  />
+                </>
+              )}
+            </div>
 
             <div className="card">
-              <h2 className="order-detail__section-title">Payments</h2>
+              <h2 className="order-detail__section-title">Ledger</h2>
               <DataTable
-                columns={[
-                  {
-                    key: 'type',
-                    header: 'Type',
-                    render: (tx) => (
-                      <StatusBadge status={tx.type} tone={tx.type === 'RELEASE' || tx.type === 'REFUND' ? 'success' : 'neutral'} />
-                    ),
-                  },
-                  { key: 'ownerName', header: 'Wallet owner' },
-                  {
-                    key: 'amount',
-                    header: 'Amount',
-                    render: (tx) => (
-                      <span className={tx.amount < 0 ? 'order-detail__amount--negative' : 'order-detail__amount--positive'}>
-                        {tx.amount > 0 ? '+' : ''}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                    ),
-                  },
-                  { key: 'availableAt', header: 'Available at', render: (tx) => formatDateTime(tx.availableAt) },
-                  { key: 'createdAt', header: 'Recorded at', render: (tx) => formatDateTime(tx.createdAt) },
-                ]}
+                columns={ledgerColumns({ showOwner: true, showOrder: false })}
                 rows={payments}
                 rowKey={(tx) => tx.id}
                 isLoading={paymentsLoading}
@@ -260,7 +396,18 @@ function OrderDetailPage() {
             </div>
           </div>
 
-          {showDispatch && <DispatchModal order={order} onClose={() => setShowDispatch(false)} />}
+          {showDispatch && <DispatchModal order={order} bids={bids} onClose={() => setShowDispatch(false)} />}
+          {disputeTarget && (
+            <ResolveDisputeModal
+              orderId={order.id}
+              milestoneId={disputeTarget.id}
+              milestoneTitle={disputeTarget.title}
+              amount={disputeTarget.amount}
+              reason={disputeTarget.dispute?.reason}
+              openedByName={disputeTarget.dispute?.openedByName}
+              onClose={() => setDisputeTarget(null)}
+            />
+          )}
         </>
       )}
     </div>

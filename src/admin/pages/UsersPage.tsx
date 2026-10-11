@@ -3,6 +3,7 @@ import { useUsers, useUpdateUserStatus } from '@/admin/api/users';
 import DataTable, { type DataTableColumn } from '@/admin/components/DataTable';
 import StatusBadge from '@/admin/components/StatusBadge';
 import Modal from '@/admin/components/Modal';
+import WalletPanel from '@/admin/components/WalletPanel';
 import { USER_ROLES, USER_STATUSES, humanize, userStatusTone } from '@/admin/utils/constants';
 import { formatDateTime } from '@/admin/utils/format';
 import { ApiError } from '@/api/client';
@@ -14,6 +15,7 @@ function UsersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [statusTarget, setStatusTarget] = useState<UserSummaryResponse | null>(null);
+  const [walletTarget, setWalletTarget] = useState<UserSummaryResponse | null>(null);
 
   const { data, isLoading, isError, error } = useUsers({ role, search: search || undefined, page, size: 20 });
 
@@ -28,9 +30,16 @@ function UsersPage() {
       key: 'actions',
       header: '',
       render: (row) => (
-        <button type="button" className="btn btn--secondary btn--sm" onClick={() => setStatusTarget(row)}>
-          Change status
-        </button>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+          {(row.role === 'CUSTOMER' || row.role === 'CONTRACTOR') && (
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => setWalletTarget(row)}>
+              Wallet
+            </button>
+          )}
+          <button type="button" className="btn btn--secondary btn--sm" onClick={() => setStatusTarget(row)}>
+            Change status
+          </button>
+        </div>
       ),
     },
   ];
@@ -84,6 +93,11 @@ function UsersPage() {
       />
 
       {statusTarget && <UpdateStatusModal user={statusTarget} onClose={() => setStatusTarget(null)} />}
+      {walletTarget && (
+        <Modal title={`Wallet — ${walletTarget.fullName} (#${walletTarget.id})`} onClose={() => setWalletTarget(null)} wide>
+          <WalletPanel userId={walletTarget.id} ownerName={walletTarget.fullName} />
+        </Modal>
+      )}
     </div>
   );
 }
