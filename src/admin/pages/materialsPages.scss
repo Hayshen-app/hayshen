@@ -1,0 +1,185 @@
+// Shared layout for the Materials pages (stores, catalog, requests, supplier orders, disputes).
+.materials {
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5b6660;
+    margin-bottom: 16px;
+
+    &:hover {
+      color: #1e4a32;
+    }
+  }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  &__logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #e1e7e2;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__section-title {
+    margin: 0 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__section-note {
+    margin: -6px 0 14px;
+    font-size: 12.5px;
+    color: #5b6660;
+  }
+
+  &__muted {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #8e9791;
+  }
+
+  &__nowrap {
+    white-space: nowrap;
+  }
+
+  &__issue {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #c0392b;
+  }
+
+  &__badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__chip {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eef3ef;
+    color: #33413a;
+    font-size: 12px;
+  }
+
+  &__timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    li {
+      padding-left: 14px;
+      border-left: 2px solid #e1e7e2;
+    }
+  }
+
+  &__timeline-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  &__timeline-time {
+    font-size: 12px;
+    font-weight: 400;
+    color: #8e9791;
+  }
+
+  &__timeline-note {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #5b6660;
+    word-break: break-word;
+  }
+
+  &__totals {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    column-gap: 32px;
+    row-gap: 6px;
+    font-size: 13px;
+
+    dt {
+      color: #5b6660;
+    }
+
+    dd {
+      margin: 0;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .is-total {
+      font-weight: 700;
+      color: #1d2a23;
+    }
+  }
+
+  &__quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  &__split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  &__split-cell {
+    padding: 10px 14px;
+    border-radius: 9px;
+    background: #f4f7f5;
+
+    strong {
+      display: block;
+      font-size: 16px;
+      margin-top: 2px;
+    }
+  }
+}
+
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
