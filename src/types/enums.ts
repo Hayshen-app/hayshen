@@ -23,6 +23,8 @@ export type WithdrawalStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REJECTED';
 
 export type WalletTransactionType =
   | 'DEPOSIT'
+  | 'MILESTONE_PAID'
+  // Legacy (pre-pay-after-completion) milestone funding.
   | 'MILESTONE_FUNDED'
   | 'MILESTONE_SETTLED'
   | 'EARNING_HELD'
@@ -51,6 +53,8 @@ export type OrderType = 'ONE_TIME' | 'MEDIUM_TERM' | 'LONG_TERM';
 
 export type MilestonePlanStatus = 'DRAFT' | 'PROPOSED' | 'APPROVED' | 'REJECTED';
 
+// Pay after completion: APPROVED -> COMPLETED (contractor done) -> ACCEPTED (customer confirmed,
+// payment due) -> PAID (final; earnings enter the 7-day hold). FUNDED is legacy only (pre-paid).
 export type MilestoneStatus =
   | 'DRAFT'
   | 'PROPOSED'
@@ -59,12 +63,13 @@ export type MilestoneStatus =
   | 'COMPLETED'
   | 'REVISION_REQUESTED'
   | 'ACCEPTED'
+  | 'PAID'
   | 'DISPUTED'
   | 'REFUNDED'
   | 'CANCELLED'
   | 'SUPERSEDED';
 
-/** A milestone's own payment record. */
+/** A milestone's own payment record (null until paid). CONFIRMED is legacy pre-funding. */
 export type PaymentStatus = 'CONFIRMED' | 'SETTLED' | 'REFUNDED';
 
 /** Contractor 7-day hold on an accepted milestone's earnings. */

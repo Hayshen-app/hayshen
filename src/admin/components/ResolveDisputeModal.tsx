@@ -12,18 +12,48 @@ interface ResolveDisputeModalProps {
   amount: number;
   reason?: string | null;
   openedByName?: string | null;
+  /** Whether the customer already paid the milestone. Unknown (Disputes list) = explain both cases. */
+  paid?: boolean;
   onClose: () => void;
 }
 
-const RESOLUTION_EFFECT: Record<DisputeResolution, string> = {
-  RELEASE_TO_CONTRACTOR:
-    'The milestone is (or stays) accepted. Its earnings go to the contractor through the normal 7-day hold, then become withdrawable.',
-  REFUND_TO_CONSUMER:
-    "The funded amount goes back to the customer's available balance. If the contractor already received it into their hold, it is reversed from the hold.",
+// Pay after completion: the money effect depends on whether the customer has already paid the milestone.
+const RESOLUTION_EFFECT: Record<DisputeResolution, { unpaid: string; paid: string }> = {
+  RELEASE_TO_CONTRACTOR: {
+    unpaid:
+      'Not paid yet: the milestone goes back to "Confirmed - payment due". No money moves now; the customer must pay it, and the payment then enters the contractor’s 7-day hold.',
+    paid: 'Already paid: the milestone returns to Paid and the contractor’s 7-day hold resumes; the earnings become withdrawable when it ends.',
+  },
+  REFUND_TO_CONSUMER: {
+    unpaid: 'Not paid yet: the milestone is cancelled. No money moves and the customer owes nothing for it.',
+    paid: 'Already paid: the amount is reversed from the contractor’s hold and refunded to the customer’s available balance; the milestone becomes Refunded.',
+  },
 };
 
+function EffectText({ resolution, paid }: { resolution: DisputeResolution; paid?: boolean }) {
+  const effect = RESOLUTION_EFFECT[resolution];
+  if (paid === undefined) {
+    return (
+      <>
+        <div>{effect.unpaid}</div>
+        <div style={{ marginTop: 4 }}>{effect.paid}</div>
+      </>
+    );
+  }
+  return <>{paid ? effect.paid : effect.unpaid}</>;
+}
+
 /** Two-step: pick the outcome + note, then confirm the money effect. Used by Disputes and Order Details. */
-function ResolveDisputeModal({ orderId, milestoneId, milestoneTitle, amount, reason, openedByName, onClose }: ResolveDisputeModalProps) {
+function ResolveDisputeModal({
+  orderId,
+  milestoneId,
+  milestoneTitle,
+  amount,
+  reason,
+  openedByName,
+  paid,
+  onClose,
+}: ResolveDisputeModalProps) {
   const [resolution, setResolution] = useState<DisputeResolution | ''>('');
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -68,6 +98,12 @@ function ResolveDisputeModal({ orderId, milestoneId, milestoneTitle, amount, rea
           <div className="detail-item__label">Amount</div>
           <div className="detail-item__value">{formatCurrency(amount)}</div>
         </div>
+        {paid !== undefined && (
+          <div className="detail-item">
+            <div className="detail-item__label">Customer payment</div>
+            <div className="detail-item__value">{paid ? 'Paid' : 'Not paid yet'}</div>
+          </div>
+        )}
         {openedByName && (
           <div className="detail-item">
             <div className="detail-item__label">Opened by</div>
@@ -91,7 +127,9 @@ function ResolveDisputeModal({ orderId, milestoneId, milestoneTitle, amount, rea
               {resolution === 'RELEASE_TO_CONTRACTOR' ? 'Release to contractor' : 'Refund to customer'} —{' '}
               {formatCurrency(amount)}
             </strong>
-            <div style={{ marginTop: 6 }}>{RESOLUTION_EFFECT[resolution]}</div>
+            <div style={{ marginTop: 6 }}>
+              <EffectText resolution={resolution} paid={paid} />
+            </div>
             <div style={{ marginTop: 6 }}>This cannot be undone from the console.</div>
           </div>
           <div className="form-actions">
@@ -121,7 +159,11 @@ function ResolveDisputeModal({ orderId, milestoneId, milestoneTitle, amount, rea
               <option value="RELEASE_TO_CONTRACTOR">Release to contractor</option>
               <option value="REFUND_TO_CONSUMER">Refund to customer</option>
             </select>
-            {resolution && <span className="field__hint">{RESOLUTION_EFFECT[resolution]}</span>}
+            {resolution && (
+              <span className="field__hint">
+                <EffectText resolution={resolution} paid={paid} />
+              </span>
+            )}
           </div>
           <div className="field">
             <label htmlFor="dispute-note">Resolution note</label>

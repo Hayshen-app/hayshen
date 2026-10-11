@@ -103,7 +103,7 @@ export interface MilestonePaymentInfo {
   status: PaymentStatus;
   providerReference: string | null;
   amount: number;
-  fundedAt: string | null;
+  paidAt: string | null;
   settledAt: string | null;
   refundedAt: string | null;
 }
@@ -141,7 +141,7 @@ export interface OrderMilestoneResponse {
   dueDate: string | null;
   status: MilestoneStatus;
   consumerApprovedAt: string | null;
-  fundedAt: string | null;
+  paidAt: string | null;
   contractorCompletedAt: string | null;
   acceptedAt: string | null;
   revisionNote: string | null;
@@ -153,7 +153,7 @@ export interface OrderMilestoneResponse {
 
 /**
  * Mirrors backend order/dto/MilestonePlanResponse. totalEstimatedAmount is the live plan total,
- * NOT money paid - fundedAmount is what the consumer actually paid in.
+ * NOT money paid - paidAmount is what the consumer actually paid (pay after completion).
  */
 export interface MilestonePlanResponse {
   orderId: number;
@@ -165,11 +165,15 @@ export interface MilestonePlanResponse {
   planApprovedAt: string | null;
   currency: string;
   totalEstimatedAmount: number;
-  fundedAmount: number;
-  remainingUnfundedAmount: number;
+  paidAmount: number;
+  remainingUnpaidAmount: number;
+  /** PAID milestones. */
   completedMilestones: number;
+  /** Confirmed done (ACCEPTED), not paid yet. */
+  awaitingPaymentMilestones: number;
   upcomingMilestones: number;
-  nextFundableMilestoneId: number | null;
+  /** The ACCEPTED milestone the customer can pay now. */
+  nextPayableMilestoneId: number | null;
   milestones: OrderMilestoneResponse[];
 }
 
@@ -180,6 +184,10 @@ export interface MilestoneDisputeResponse {
   milestoneId: number;
   milestoneTitle: string;
   amount: number;
+  /** Current status of the disputed milestone (DISPUTED while open). */
+  milestoneStatus: MilestoneStatus;
+  /** Whether the customer already paid the milestone - decides the money effect of a resolution. */
+  paid: boolean;
   openedByUserId: number;
   openedByName: string;
   reason: string;
