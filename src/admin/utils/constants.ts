@@ -153,15 +153,28 @@ const MILESTONE_STATUS_TONE: Record<MilestoneStatus, Tone> = {
   DRAFT: 'neutral',
   PROPOSED: 'info',
   APPROVED: 'info',
-  FUNDED: 'warning',
-  COMPLETED: 'warning',
+  FUNDED: 'info',
+  COMPLETED: 'info',
   REVISION_REQUESTED: 'warning',
-  ACCEPTED: 'success',
+  ACCEPTED: 'warning',
+  PAID: 'success',
   DISPUTED: 'danger',
   REFUNDED: 'neutral',
   CANCELLED: 'neutral',
   SUPERSEDED: 'neutral',
 };
+
+const MILESTONE_STATUS_LABEL: Partial<Record<MilestoneStatus, string>> = {
+  APPROVED: 'Approved - not started',
+  FUNDED: 'Funded (legacy prepaid)',
+  COMPLETED: 'Done - awaiting confirmation',
+  ACCEPTED: 'Confirmed - payment due',
+  PAID: 'Paid',
+};
+
+export function milestoneStatusLabel(status: MilestoneStatus): string {
+  return MILESTONE_STATUS_LABEL[status] || humanize(status);
+}
 
 export function milestoneStatusTone(status: MilestoneStatus): Tone {
   return MILESTONE_STATUS_TONE[status] || 'neutral';
@@ -190,6 +203,7 @@ export function holdStatusTone(status: HoldStatus): Tone {
 
 const POSITIVE_TRANSACTION_TYPES: WalletTransactionType[] = [
   'DEPOSIT',
+  'MILESTONE_PAID',
   'HOLD_RELEASED',
   'RESERVATION_REFUNDED',
   'REFUND',

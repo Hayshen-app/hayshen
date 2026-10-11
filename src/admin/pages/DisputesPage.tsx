@@ -28,7 +28,16 @@ function DisputesPage() {
         </div>
       ),
     },
-    { key: 'amount', header: 'Amount', render: (row) => formatCurrency(row.amount) },
+    {
+      key: 'amount',
+      header: 'Amount',
+      render: (row) => (
+        <div>
+          <div>{formatCurrency(row.amount)}</div>
+          <div className="field__hint">{row.paid ? 'Paid' : 'Not paid'}</div>
+        </div>
+      ),
+    },
     { key: 'openedByName', header: 'Opened by' },
     { key: 'reason', header: 'Reason' },
     {
@@ -61,8 +70,9 @@ function DisputesPage() {
         <div>
           <h1>Disputes</h1>
           <p>
-            Milestones disputed by the customer or the contractor. While a dispute is open the milestone's money stays
-            locked (reserved, or blocked in the contractor's hold).
+            Milestones disputed by the customer or the contractor. Customers pay a milestone only after confirming it, so
+            many disputes concern unpaid work (no money held). If it was already paid, the contractor's hold stays
+            blocked until you resolve it.
           </p>
         </div>
       </div>
@@ -106,6 +116,7 @@ function DisputesPage() {
           amount={target.amount}
           reason={target.reason}
           openedByName={target.openedByName}
+          paid={target.paid}
           onClose={() => setTarget(null)}
         />
       )}

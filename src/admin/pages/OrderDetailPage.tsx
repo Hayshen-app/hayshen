@@ -14,6 +14,7 @@ import {
   disputeStatusTone,
   holdStatusTone,
   humanize,
+  milestoneStatusLabel,
   milestoneStatusTone,
   orderBidStatusTone,
   orderStatusTone,
@@ -41,7 +42,7 @@ function OrderDetailPage() {
   const [disputeTarget, setDisputeTarget] = useState<OrderMilestoneResponse | null>(null);
 
   const milestones = plan?.milestones ?? order?.milestones ?? [];
-  const milestonesAccepted = milestones.filter((m) => m.status === 'ACCEPTED').length;
+  const milestonesPaid = milestones.filter((m) => m.status === 'PAID').length;
 
   return (
     <div>
@@ -76,8 +77,8 @@ function OrderDetailPage() {
             <StatCard icon={<Handshake size={20} />} label="Bids received" value={String(bids?.length ?? 0)} />
             <StatCard
               icon={<Milestone size={20} />}
-              label="Milestones accepted"
-              value={milestones.length ? `${milestonesAccepted} / ${milestones.length}` : '—'}
+              label="Milestones paid"
+              value={milestones.length ? `${milestonesPaid} / ${milestones.length}` : '—'}
             />
             <StatCard icon={<Receipt size={20} />} label="Payments recorded" value={String(payments?.length ?? 0)} />
           </div>
@@ -244,24 +245,25 @@ function OrderDetailPage() {
                       }
                     />
                     <Detail label="Plan total (estimated)" value={formatCurrency(plan.totalEstimatedAmount)} />
-                    <Detail label="Funded by customer" value={formatCurrency(plan.fundedAmount)} />
-                    <Detail label="Remaining unfunded" value={formatCurrency(plan.remainingUnfundedAmount)} />
+                    <Detail label="Paid by customer" value={formatCurrency(plan.paidAmount)} />
+                    <Detail label="Remaining unpaid" value={formatCurrency(plan.remainingUnpaidAmount)} />
                     <Detail
-                      label="Completed / upcoming"
-                      value={`${plan.completedMilestones} / ${plan.upcomingMilestones}`}
+                      label="Paid / awaiting payment / upcoming"
+                      value={`${plan.completedMilestones} / ${plan.awaitingPaymentMilestones} / ${plan.upcomingMilestones}`}
                     />
                     <Detail
-                      label="Next fundable"
+                      label="Payment due now"
                       value={
-                        plan.nextFundableMilestoneId
-                          ? `#${plan.milestones.find((m) => m.id === plan.nextFundableMilestoneId)?.sequence ?? '?'} (id ${plan.nextFundableMilestoneId})`
+                        plan.nextPayableMilestoneId
+                          ? `#${plan.milestones.find((m) => m.id === plan.nextPayableMilestoneId)?.sequence ?? '?'} (id ${plan.nextPayableMilestoneId})`
                           : '—'
                       }
                     />
                   </div>
                   <p className="order-detail__section-note">
-                    The plan total is what the live plan will cost, not money paid. Each milestone is funded separately by
-                    the customer; accepted milestones go into the contractor's 7-day hold before becoming withdrawable.
+                    Pay after completion: the plan total is what the live plan will cost, not money paid. The contractor
+                    completes a milestone, the customer confirms it (payment due), then pays it; the payment goes into the
+                    contractor's 7-day hold before becoming withdrawable.
                   </p>
                   <DataTable
                     columns={[
@@ -285,7 +287,7 @@ function OrderDetailPage() {
                       {
                         key: 'status',
                         header: 'Status',
-                        render: (m) => <StatusBadge status={m.status} tone={milestoneStatusTone(m.status)} />,
+                        render: (m) => <StatusBadge status={m.status} tone={milestoneStatusTone(m.status)} label={milestoneStatusLabel(m.status)} />,
                       },
                       {
                         key: 'payment',
@@ -295,11 +297,13 @@ function OrderDetailPage() {
                             <div>
                               <StatusBadge status={m.payment.status} tone={paymentStatusTone(m.payment.status)} />
                               <div className="order-detail__muted">
-                                {m.payment.providerReference || `#${m.payment.id}`} · funded {formatDateTime(m.payment.fundedAt)}
+                                {m.payment.providerReference || `#${m.payment.id}`} · paid {formatDateTime(m.payment.paidAt ?? m.paidAt)}
                               </div>
                             </div>
                           ) : (
-                            <span className="order-detail__muted">Not funded</span>
+                            <span className="order-detail__muted">
+                              {m.status === 'ACCEPTED' ? 'Payment due' : 'Not paid'}
+                            </span>
                           ),
                       },
                       {
@@ -405,6 +409,7 @@ function OrderDetailPage() {
               amount={disputeTarget.amount}
               reason={disputeTarget.dispute?.reason}
               openedByName={disputeTarget.dispute?.openedByName}
+              paid={disputeTarget.payment != null && disputeTarget.payment.status !== 'REFUNDED'}
               onClose={() => setDisputeTarget(null)}
             />
           )}
