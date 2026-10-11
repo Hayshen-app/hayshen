@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { buildQuery, useAuthorizedRequest } from '@/admin/api/http';
-import type { AdminAssignOrderRequest, OrderBidResponse, OrderResponse, OrderSummaryResponse } from '@/admin/types';
+import type { OrderBidResponse, OrderResponse, OrderSummaryResponse } from '@/admin/types';
 import type { PageResponse } from '@/types/api';
 import type { OrderStatus } from '@/types/enums';
 
@@ -34,26 +34,5 @@ export function useOrderBids(id: string | number | undefined) {
     queryKey: ['admin', 'order', String(id), 'bids'],
     queryFn: () => request<OrderBidResponse[]>(`/admin/orders/${id}/bids`),
     enabled: Boolean(id),
-  });
-}
-
-interface DispatchOrderParams extends AdminAssignOrderRequest {
-  id: number;
-}
-
-export function useDispatchOrder() {
-  const request = useAuthorizedRequest();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, companyId, agreedPrice }: DispatchOrderParams) =>
-      request<OrderResponse>(`/admin/orders/${id}/dispatch`, {
-        method: 'PUT',
-        body: { companyId, agreedPrice } satisfies AdminAssignOrderRequest,
-      }),
-    onSuccess: (_data, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'order', String(id)] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'orderMilestones', id] });
-    },
   });
 }

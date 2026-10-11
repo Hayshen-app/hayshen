@@ -8,9 +8,7 @@ import ResolveDisputeModal from '@/admin/components/ResolveDisputeModal';
 import { ledgerColumns } from '@/admin/components/WalletPanel';
 import StatCard from '@/admin/components/StatCard';
 import StatusBadge from '@/admin/components/StatusBadge';
-import DispatchModal from '@/admin/pages/DispatchModal';
 import {
-  DISPATCHABLE_ORDER_STATUSES,
   disputeStatusTone,
   holdStatusTone,
   humanize,
@@ -38,7 +36,6 @@ function OrderDetailPage() {
     isError: planError,
     error: planErrorDetail,
   } = useOrderMilestonePlan(order ? Number(order.id) : undefined);
-  const [showDispatch, setShowDispatch] = useState(false);
   const [disputeTarget, setDisputeTarget] = useState<OrderMilestoneResponse | null>(null);
 
   const milestones = plan?.milestones ?? order?.milestones ?? [];
@@ -65,11 +62,6 @@ function OrderDetailPage() {
                 Created {formatDateTime(order.createdAt)} · Updated {formatDateTime(order.updatedAt)}
               </p>
             </div>
-            {DISPATCHABLE_ORDER_STATUSES.includes(order.status) && (
-              <button type="button" className="btn btn--primary" onClick={() => setShowDispatch(true)}>
-                Dispatch to company
-              </button>
-            )}
           </div>
 
           <div className="stat-grid">
@@ -280,6 +272,11 @@ function OrderDetailPage() {
                               </div>
                             )}
                             {m.revisionNote && <div className="order-detail__muted">Revision: {m.revisionNote}</div>}
+                            {!!m.workers?.length && (
+                              <div className="order-detail__muted">
+                                Workers: {m.workers.map((w) => w.fullName).join(', ')}
+                              </div>
+                            )}
                           </div>
                         ),
                       },
@@ -399,8 +396,6 @@ function OrderDetailPage() {
               )}
             </div>
           </div>
-
-          {showDispatch && <DispatchModal order={order} bids={bids} onClose={() => setShowDispatch(false)} />}
           {disputeTarget && (
             <ResolveDisputeModal
               orderId={order.id}
