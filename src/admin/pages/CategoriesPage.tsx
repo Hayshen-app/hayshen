@@ -7,10 +7,11 @@ import {
   useDeactivateCategory,
   useServiceItems,
   useUpdateCategory,
+  useUpdateServiceItem,
 } from '@/admin/api/categories';
 import Modal from '@/admin/components/Modal';
 import { ApiError } from '@/api/client';
-import type { CategoryResponse } from '@/admin/types';
+import type { CategoryResponse, ServiceItemResponse } from '@/admin/types';
 import '@/admin/pages/categoriesPage.scss';
 
 function CategoriesPage() {
@@ -18,6 +19,7 @@ function CategoriesPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [editing, setEditing] = useState<CategoryResponse | null>(null);
   const [creatingServiceFor, setCreatingServiceFor] = useState<CategoryResponse | null>(null);
+  const [editingService, setEditingService] = useState<ServiceItemResponse | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
   return (
@@ -46,6 +48,7 @@ function CategoriesPage() {
             onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
             onEdit={() => setEditing(category)}
             onAddService={() => setCreatingServiceFor(category)}
+            onEditService={setEditingService}
           />
         ))}
       </div>
@@ -53,7 +56,19 @@ function CategoriesPage() {
       {showCreate && <CategoryFormModal onClose={() => setShowCreate(false)} />}
       {editing && <CategoryFormModal category={editing} onClose={() => setEditing(null)} />}
       {creatingServiceFor && (
-        <ServiceItemFormModal category={creatingServiceFor} onClose={() => setCreatingServiceFor(null)} />
+        <ServiceItemFormModal
+          categoryId={creatingServiceFor.id}
+          categories={categories ?? []}
+          onClose={() => setCreatingServiceFor(null)}
+        />
+      )}
+      {editingService && (
+        <ServiceItemFormModal
+          service={editingService}
+          categoryId={editingService.categoryId}
+          categories={categories ?? []}
+          onClose={() => setEditingService(null)}
+        />
       )}
     </div>
   );
@@ -65,9 +80,10 @@ interface CategoryCardProps {
   onToggle: () => void;
   onEdit: () => void;
   onAddService: () => void;
+  onEditService: (service: ServiceItemResponse) => void;
 }
 
-function CategoryCard({ category, expanded, onToggle, onEdit, onAddService }: CategoryCardProps) {
+function CategoryCard({ category, expanded, onToggle, onEdit, onAddService, onEditService }: CategoryCardProps) {
   const deactivate = useDeactivateCategory();
   const { data: services, isLoading } = useServiceItems(category.id, { enabled: expanded });
 
@@ -91,7 +107,7 @@ function CategoryCard({ category, expanded, onToggle, onEdit, onAddService }: Ca
           <button
             type="button"
             className="btn btn--danger btn--sm"
-            disabled={deactivate.isPending}
+            disabled={deactivate.isPending || !category.active}
             onClick={() => deactivate.mutate(category.id)}
           >
             {category.active ? 'Deactivate' : 'Deactivated'}
@@ -111,6 +127,14 @@ function CategoryCard({ category, expanded, onToggle, onEdit, onAddService }: Ca
                 <li key={service.id}>
                   <span>{service.name}</span>
                   {!service.active && <span className="badge badge--neutral">Inactive</span>}
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--sm category-card__service-edit"
+                    onClick={() => onEditService(service)}
+                  >
+                    <Pencil size={14} />
+                    Edit
+                  </button>
                 </li>
               ))}
             </ul>
@@ -211,31 +235,68 @@ function CategoryFormModal({ category, onClose }: { category?: CategoryResponse;
   );
 }
 
-function ServiceItemFormModal({ category, onClose }: { category: CategoryResponse; onClose: () => void }) {
-  const [form, setForm] = useState({ name: '', description: '', active: true });
+interface ServiceItemFormModalProps {
+  service?: ServiceItemResponse;
+  categoryId: number;
+  categories: CategoryResponse[];
+  onClose: () => void;
+}
+
+function ServiceItemFormModal({ service, categoryId, categories, onClose }: ServiceItemFormModalProps) {
+  const [form, setForm] = useState({
+    categoryId,
+    name: service?.name || '',
+    description: service?.description || '',
+    active: service?.active ?? true,
+  });
   const [error, setError] = useState('');
-  const mutation = useCreateServiceItem();
+  const createServiceItem = useCreateServiceItem();
+  const updateServiceItem = useUpdateServiceItem();
+  const mutation = service ? updateServiceItem : createServiceItem;
+  const categoryName = categories.find((c) => c.id === categoryId)?.name;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+    const payload = {
+      categoryId: form.categoryId,
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
+      active: form.active,
+    };
     try {
-      await mutation.mutateAsync({
-        categoryId: category.id,
-        name: form.name.trim(),
-        description: form.description.trim() || undefined,
-        active: form.active,
-      });
+      if (service) {
+        await updateServiceItem.mutateAsync({ id: service.id, ...payload });
+      } else {
+        await createServiceItem.mutateAsync(payload);
+      }
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to create service item.');
+      setError(err instanceof ApiError ? err.message : 'Failed to save service item.');
     }
   };
 
   return (
-    <Modal title={`New service — ${category.name}`} onClose={onClose}>
+    <Modal title={service ? `Edit ${service.name}` : `New service — ${categoryName ?? ''}`} onClose={onClose}>
       {error && <div className="form-error">{error}</div>}
       <form onSubmit={handleSubmit}>
+        {service && (
+          <div className="field">
+            <label htmlFor="service-category">Category</label>
+            <select
+              id="service-category"
+              value={form.categoryId}
+              onChange={(event) => setForm((prev) => ({ ...prev, categoryId: Number(event.target.value) }))}
+            >
+              {categories.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                  {option.active ? '' : ' (inactive)'}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="field">
           <label htmlFor="service-name">Name</label>
           <input

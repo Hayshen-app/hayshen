@@ -14,7 +14,7 @@ export function useServiceItems(categoryId: number | undefined, { enabled = true
   const request = useAuthorizedRequest();
   return useQuery({
     queryKey: ['admin', 'categories', categoryId, 'services'],
-    queryFn: () => request<ServiceItemResponse[]>(`/categories/${categoryId}/services`),
+    queryFn: () => request<ServiceItemResponse[]>(`/admin/categories/${categoryId}/services`),
     enabled: Boolean(categoryId) && enabled,
   });
 }
@@ -60,5 +60,20 @@ export function useCreateServiceItem() {
       request<ServiceItemResponse>('/admin/categories/services', { method: 'POST', body: payload }),
     onSuccess: (_data, payload) =>
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories', payload.categoryId, 'services'] }),
+  });
+}
+
+interface UpdateServiceItemParams extends ServiceItemRequest {
+  id: number;
+}
+
+export function useUpdateServiceItem() {
+  const request = useAuthorizedRequest();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: UpdateServiceItemParams) =>
+      request<ServiceItemResponse>(`/admin/categories/services/${id}`, { method: 'PUT', body: payload }),
+    // The service may have moved category, so refresh every category's list.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] }),
   });
 }
