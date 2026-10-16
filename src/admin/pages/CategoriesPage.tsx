@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { Children, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Pencil, Plus } from 'lucide-react';
 import {
   useCategories,
@@ -14,22 +14,63 @@ import { ApiError } from '@/api/client';
 import type { CategoryResponse, ServiceItemResponse } from '@/admin/types';
 import '@/admin/pages/categoriesPage.scss';
 
+const byDisplayOrder = (a: CategoryResponse, b: CategoryResponse) =>
+  a.displayOrder - b.displayOrder || a.name.localeCompare(b.name);
+
+/** "Parent › Subcategory" for subcategories, plain name for top-level categories. */
+function categoryLabel(category: CategoryResponse) {
+  return category.parentName ? `${category.parentName} › ${category.name}` : category.name;
+}
+
 function CategoriesPage() {
   const { data: categories, isLoading, isError, error } = useCategories();
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [editing, setEditing] = useState<CategoryResponse | null>(null);
   const [creatingServiceFor, setCreatingServiceFor] = useState<CategoryResponse | null>(null);
   const [editingService, setEditingService] = useState<ServiceItemResponse | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
+  const [createParentId, setCreateParentId] = useState<number | null | undefined>(undefined);
+
+  const { topLevel, childrenOf } = useMemo(() => {
+    const all = categories ?? [];
+    const ids = new Set(all.map((c) => c.id));
+    const children = new Map<number, CategoryResponse[]>();
+    const roots: CategoryResponse[] = [];
+    for (const c of all) {
+      // Orphans (parent missing from the list) are shown at the top level rather than dropped.
+      if (c.parentId != null && ids.has(c.parentId)) {
+        children.set(c.parentId, [...(children.get(c.parentId) ?? []), c]);
+      } else {
+        roots.push(c);
+      }
+    }
+    children.forEach((list) => list.sort(byDisplayOrder));
+    return { topLevel: roots.sort(byDisplayOrder), childrenOf: children };
+  }, [categories]);
+
+  const renderCard = (category: CategoryResponse, nested = false) => (
+    <CategoryCard
+      key={category.id}
+      category={category}
+      nested={nested}
+      expanded={expandedId === category.id}
+      onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
+      onEdit={() => setEditing(category)}
+      onAddSubcategory={nested ? undefined : () => setCreateParentId(category.id)}
+      onAddService={() => setCreatingServiceFor(category)}
+      onEditService={setEditingService}
+    >
+      {!nested && (childrenOf.get(category.id) ?? []).map((child) => renderCard(child, true))}
+    </CategoryCard>
+  );
 
   return (
     <div>
       <div className="page-header">
         <div>
           <h1>Categories</h1>
-          <p>Categories and service items shown on the Customer App.</p>
+          <p>Categories, subcategories and service items shown on the Customer App.</p>
         </div>
-        <button type="button" className="btn btn--primary" onClick={() => setShowCreate(true)}>
+        <button type="button" className="btn btn--primary" onClick={() => setCreateParentId(null)}>
           <Plus size={16} />
           New category
         </button>
@@ -39,22 +80,24 @@ function CategoriesPage() {
       {isError && <div className="empty-state">{error?.message || 'Failed to load categories.'}</div>}
       {categories && categories.length === 0 && <div className="empty-state">No categories yet.</div>}
 
-      <div className="category-list">
-        {categories?.map((category) => (
-          <CategoryCard
-            key={category.id}
-            category={category}
-            expanded={expandedId === category.id}
-            onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
-            onEdit={() => setEditing(category)}
-            onAddService={() => setCreatingServiceFor(category)}
-            onEditService={setEditingService}
-          />
-        ))}
-      </div>
+      <div className="category-list">{topLevel.map((category) => renderCard(category))}</div>
 
-      {showCreate && <CategoryFormModal onClose={() => setShowCreate(false)} />}
-      {editing && <CategoryFormModal category={editing} onClose={() => setEditing(null)} />}
+      {createParentId !== undefined && (
+        <CategoryFormModal
+          defaultParentId={createParentId}
+          topLevel={topLevel}
+          hasSubcategories={false}
+          onClose={() => setCreateParentId(undefined)}
+        />
+      )}
+      {editing && (
+        <CategoryFormModal
+          category={editing}
+          topLevel={topLevel}
+          hasSubcategories={childrenOf.has(editing.id)}
+          onClose={() => setEditing(null)}
+        />
+      )}
       {creatingServiceFor && (
         <ServiceItemFormModal
           categoryId={creatingServiceFor.id}
@@ -76,19 +119,34 @@ function CategoriesPage() {
 
 interface CategoryCardProps {
   category: CategoryResponse;
+  nested: boolean;
   expanded: boolean;
   onToggle: () => void;
   onEdit: () => void;
+  /** Only top-level categories can take subcategories. */
+  onAddSubcategory?: () => void;
   onAddService: () => void;
   onEditService: (service: ServiceItemResponse) => void;
+  children?: ReactNode;
 }
 
-function CategoryCard({ category, expanded, onToggle, onEdit, onAddService, onEditService }: CategoryCardProps) {
+function CategoryCard({
+  category,
+  nested,
+  expanded,
+  onToggle,
+  onEdit,
+  onAddSubcategory,
+  onAddService,
+  onEditService,
+  children,
+}: CategoryCardProps) {
   const deactivate = useDeactivateCategory();
   const { data: services, isLoading } = useServiceItems(category.id, { enabled: expanded });
+  const hasSubcategories = Children.count(children) > 0;
 
   return (
-    <div className="card category-card">
+    <div className={nested ? 'category-card category-card--nested' : 'card category-card'}>
       <div className="category-card__header">
         <button type="button" className="category-card__toggle" onClick={onToggle}>
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -96,6 +154,12 @@ function CategoryCard({ category, expanded, onToggle, onEdit, onAddService, onEd
           {!category.active && <span className="badge badge--neutral">Inactive</span>}
         </button>
         <div className="category-card__actions">
+          {onAddSubcategory && (
+            <button type="button" className="btn btn--secondary btn--sm" onClick={onAddSubcategory}>
+              <Plus size={14} />
+              Subcategory
+            </button>
+          )}
           <button type="button" className="btn btn--secondary btn--sm" onClick={onAddService}>
             <Plus size={14} />
             Service
@@ -141,14 +205,27 @@ function CategoryCard({ category, expanded, onToggle, onEdit, onAddService, onEd
           )}
         </div>
       )}
+
+      {hasSubcategories && <div className="category-card__subcategories">{children}</div>}
     </div>
   );
 }
 
-function CategoryFormModal({ category, onClose }: { category?: CategoryResponse; onClose: () => void }) {
+interface CategoryFormModalProps {
+  category?: CategoryResponse;
+  /** Preselected parent when adding a subcategory from a category card; null for a new top-level category. */
+  defaultParentId?: number | null;
+  topLevel: CategoryResponse[];
+  /** A category that already has subcategories must stay top-level (subcategories are one level deep). */
+  hasSubcategories: boolean;
+  onClose: () => void;
+}
+
+function CategoryFormModal({ category, defaultParentId, topLevel, hasSubcategories, onClose }: CategoryFormModalProps) {
   const isEditing = Boolean(category);
   const [form, setForm] = useState({
     name: category?.name || '',
+    parentId: category?.parentId ? String(category.parentId) : defaultParentId ? String(defaultParentId) : '',
     description: category?.description || '',
     iconUrl: category?.iconUrl || '',
     displayOrder: category?.displayOrder ?? 0,
@@ -173,6 +250,7 @@ function CategoryFormModal({ category, onClose }: { category?: CategoryResponse;
       name: form.name.trim(),
       description: form.description.trim() || undefined,
       iconUrl: form.iconUrl.trim() || undefined,
+      parentId: form.parentId ? Number(form.parentId) : null,
       displayOrder: Number(form.displayOrder) || 0,
       active: form.active,
     };
@@ -188,13 +266,40 @@ function CategoryFormModal({ category, onClose }: { category?: CategoryResponse;
     }
   };
 
+  const parentOptions = topLevel.filter((option) => option.id !== category?.id);
+  const title = isEditing && category
+    ? `Edit ${category.name}`
+    : defaultParentId
+      ? 'New subcategory'
+      : 'New category';
+
   return (
-    <Modal title={isEditing && category ? `Edit ${category.name}` : 'New category'} onClose={onClose}>
+    <Modal title={title} onClose={onClose}>
       {error && <div className="form-error">{error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="category-name">Name</label>
           <input id="category-name" required maxLength={120} value={form.name} onChange={handleChange('name')} />
+        </div>
+        <div className="field">
+          <label htmlFor="category-parent">Parent category</label>
+          <select
+            id="category-parent"
+            value={form.parentId}
+            disabled={hasSubcategories}
+            onChange={(event) => setForm((prev) => ({ ...prev, parentId: event.target.value }))}
+          >
+            <option value="">None (top level)</option>
+            {parentOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+                {option.active ? '' : ' (inactive)'}
+              </option>
+            ))}
+          </select>
+          {hasSubcategories && (
+            <small className="category-form__hint">This category has subcategories, so it stays at the top level.</small>
+          )}
         </div>
         <div className="field">
           <label htmlFor="category-description">Description</label>
@@ -253,7 +358,12 @@ function ServiceItemFormModal({ service, categoryId, categories, onClose }: Serv
   const createServiceItem = useCreateServiceItem();
   const updateServiceItem = useUpdateServiceItem();
   const mutation = service ? updateServiceItem : createServiceItem;
-  const categoryName = categories.find((c) => c.id === categoryId)?.name;
+  const owner = categories.find((c) => c.id === categoryId);
+  const categoryName = owner ? categoryLabel(owner) : undefined;
+  const categoryOptions = useMemo(
+    () => [...categories].sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b))),
+    [categories],
+  );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -288,9 +398,9 @@ function ServiceItemFormModal({ service, categoryId, categories, onClose }: Serv
               value={form.categoryId}
               onChange={(event) => setForm((prev) => ({ ...prev, categoryId: Number(event.target.value) }))}
             >
-              {categories.map((option) => (
+              {categoryOptions.map((option) => (
                 <option key={option.id} value={option.id}>
-                  {option.name}
+                  {categoryLabel(option)}
                   {option.active ? '' : ' (inactive)'}
                 </option>
               ))}
