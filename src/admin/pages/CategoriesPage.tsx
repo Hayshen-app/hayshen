@@ -1,16 +1,19 @@
 import { Children, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, Pencil, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   useCategories,
   useCreateCategory,
   useCreateServiceItem,
   useDeactivateCategory,
+  useDeleteCategory,
+  useDeleteServiceItem,
   useServiceItems,
   useUpdateCategory,
   useUpdateServiceItem,
 } from '@/admin/api/categories';
 import Modal from '@/admin/components/Modal';
 import { ApiError } from '@/api/client';
+import { apiErrorMessage } from '@/admin/utils/errors';
 import type { CategoryResponse, ServiceItemResponse } from '@/admin/types';
 import '@/admin/pages/categoriesPage.scss';
 
@@ -29,6 +32,8 @@ function CategoriesPage() {
   const [creatingServiceFor, setCreatingServiceFor] = useState<CategoryResponse | null>(null);
   const [editingService, setEditingService] = useState<ServiceItemResponse | null>(null);
   const [createParentId, setCreateParentId] = useState<number | null | undefined>(undefined);
+  const [deletingCategory, setDeletingCategory] = useState<CategoryResponse | null>(null);
+  const [deletingService, setDeletingService] = useState<ServiceItemResponse | null>(null);
 
   const { topLevel, childrenOf } = useMemo(() => {
     const all = categories ?? [];
@@ -58,6 +63,8 @@ function CategoriesPage() {
       onAddSubcategory={nested ? undefined : () => setCreateParentId(category.id)}
       onAddService={() => setCreatingServiceFor(category)}
       onEditService={setEditingService}
+      onDelete={() => setDeletingCategory(category)}
+      onDeleteService={setDeletingService}
     >
       {!nested && (childrenOf.get(category.id) ?? []).map((child) => renderCard(child, true))}
     </CategoryCard>
@@ -98,6 +105,12 @@ function CategoriesPage() {
           onClose={() => setEditing(null)}
         />
       )}
+      {deletingCategory && (
+        <DeleteCategoryModal category={deletingCategory} onClose={() => setDeletingCategory(null)} />
+      )}
+      {deletingService && (
+        <DeleteServiceModal service={deletingService} onClose={() => setDeletingService(null)} />
+      )}
       {creatingServiceFor && (
         <ServiceItemFormModal
           categoryId={creatingServiceFor.id}
@@ -127,6 +140,8 @@ interface CategoryCardProps {
   onAddSubcategory?: () => void;
   onAddService: () => void;
   onEditService: (service: ServiceItemResponse) => void;
+  onDelete: () => void;
+  onDeleteService: (service: ServiceItemResponse) => void;
   children?: ReactNode;
 }
 
@@ -139,6 +154,8 @@ function CategoryCard({
   onAddSubcategory,
   onAddService,
   onEditService,
+  onDelete,
+  onDeleteService,
   children,
 }: CategoryCardProps) {
   const deactivate = useDeactivateCategory();
@@ -176,6 +193,10 @@ function CategoryCard({
           >
             {category.active ? 'Deactivate' : 'Deactivated'}
           </button>
+          <button type="button" className="btn btn--danger btn--sm" onClick={onDelete} aria-label={`Delete ${category.name}`}>
+            <Trash2 size={14} />
+            Delete
+          </button>
         </div>
       </div>
 
@@ -198,6 +219,14 @@ function CategoryCard({
                   >
                     <Pencil size={14} />
                     Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger btn--sm"
+                    onClick={() => onDeleteService(service)}
+                    aria-label={`Delete ${service.name}`}
+                  >
+                    <Trash2 size={14} />
                   </button>
                 </li>
               ))}
@@ -348,8 +377,11 @@ interface ServiceItemFormModalProps {
 }
 
 function ServiceItemFormModal({ service, categoryId, categories, onClose }: ServiceItemFormModalProps) {
+  const owner = categories.find((c) => c.id === categoryId);
   const [form, setForm] = useState({
-    categoryId,
+    // A service sits in a top-level category or in one of its subcategories (subcategoryId '' = none).
+    topCategoryId: owner?.parentId ?? categoryId,
+    subcategoryId: owner?.parentId ? String(categoryId) : '',
     name: service?.name || '',
     description: service?.description || '',
     active: service?.active ?? true,
@@ -358,18 +390,20 @@ function ServiceItemFormModal({ service, categoryId, categories, onClose }: Serv
   const createServiceItem = useCreateServiceItem();
   const updateServiceItem = useUpdateServiceItem();
   const mutation = service ? updateServiceItem : createServiceItem;
-  const owner = categories.find((c) => c.id === categoryId);
-  const categoryName = owner ? categoryLabel(owner) : undefined;
-  const categoryOptions = useMemo(
-    () => [...categories].sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b))),
+  const topLevelOptions = useMemo(
+    () => categories.filter((c) => c.parentId == null).sort(byDisplayOrder),
     [categories],
+  );
+  const subcategoryOptions = useMemo(
+    () => categories.filter((c) => c.parentId === form.topCategoryId).sort(byDisplayOrder),
+    [categories, form.topCategoryId],
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
     const payload = {
-      categoryId: form.categoryId,
+      categoryId: form.subcategoryId ? Number(form.subcategoryId) : form.topCategoryId,
       name: form.name.trim(),
       description: form.description.trim() || undefined,
       active: form.active,
@@ -387,26 +421,43 @@ function ServiceItemFormModal({ service, categoryId, categories, onClose }: Serv
   };
 
   return (
-    <Modal title={service ? `Edit ${service.name}` : `New service — ${categoryName ?? ''}`} onClose={onClose}>
+    <Modal title={service ? `Edit ${service.name}` : `New service — ${owner ? categoryLabel(owner) : ''}`} onClose={onClose}>
       {error && <div className="form-error">{error}</div>}
       <form onSubmit={handleSubmit}>
-        {service && (
-          <div className="field">
-            <label htmlFor="service-category">Category</label>
-            <select
-              id="service-category"
-              value={form.categoryId}
-              onChange={(event) => setForm((prev) => ({ ...prev, categoryId: Number(event.target.value) }))}
-            >
-              {categoryOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {categoryLabel(option)}
-                  {option.active ? '' : ' (inactive)'}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div className="field">
+          <label htmlFor="service-category">Category</label>
+          <select
+            id="service-category"
+            value={form.topCategoryId}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, topCategoryId: Number(event.target.value), subcategoryId: '' }))
+            }
+          >
+            {topLevelOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+                {option.active ? '' : ' (inactive)'}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="service-subcategory">Subcategory</label>
+          <select
+            id="service-subcategory"
+            value={form.subcategoryId}
+            disabled={subcategoryOptions.length === 0}
+            onChange={(event) => setForm((prev) => ({ ...prev, subcategoryId: event.target.value }))}
+          >
+            <option value="">{subcategoryOptions.length === 0 ? 'No subcategories' : 'None (directly in the category)'}</option>
+            {subcategoryOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+                {option.active ? '' : ' (inactive)'}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="field">
           <label htmlFor="service-name">Name</label>
           <input
@@ -445,6 +496,108 @@ function ServiceItemFormModal({ service, categoryId, categories, onClose }: Serv
         </div>
       </form>
     </Modal>
+  );
+}
+
+interface DeleteConfirmModalProps {
+  title: string;
+  description: ReactNode;
+  /** Permanent delete; the API refuses with a 409 and the reasons when the record is still in use. */
+  onDelete: () => Promise<unknown>;
+  /** Offered when the delete is refused (or right away) - hides the record but keeps its history. */
+  onDeactivate?: () => Promise<unknown>;
+  alreadyInactive: boolean;
+  onClose: () => void;
+}
+
+function DeleteConfirmModal({ title, description, onDelete, onDeactivate, alreadyInactive, onClose }: DeleteConfirmModalProps) {
+  const [error, setError] = useState('');
+  const [inUse, setInUse] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  const run = async (action: () => Promise<unknown>, fallback: string, isDelete: boolean) => {
+    setError('');
+    setPending(true);
+    try {
+      await action();
+      onClose();
+    } catch (err) {
+      setInUse(isDelete && err instanceof ApiError && err.status === 409);
+      setError(apiErrorMessage(err, fallback));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <Modal title={title} onClose={onClose}>
+      {error && <div className="form-error">{error}</div>}
+      {!inUse && <p className="category-form__confirm">{description}</p>}
+      <div className="form-actions">
+        <button type="button" className="btn btn--secondary" onClick={onClose} disabled={pending}>
+          Cancel
+        </button>
+        {onDeactivate && !alreadyInactive && (
+          <button
+            type="button"
+            className={inUse ? 'btn btn--primary' : 'btn btn--secondary'}
+            disabled={pending}
+            onClick={() => run(onDeactivate, 'Failed to deactivate.', false)}
+          >
+            Deactivate instead
+          </button>
+        )}
+        {!inUse && (
+          <button
+            type="button"
+            className="btn btn--danger"
+            disabled={pending}
+            onClick={() => run(onDelete, 'Failed to delete.', true)}
+          >
+            {pending ? 'Deleting…' : 'Delete permanently'}
+          </button>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function DeleteCategoryModal({ category, onClose }: { category: CategoryResponse; onClose: () => void }) {
+  const deleteCategory = useDeleteCategory();
+  const deactivate = useDeactivateCategory();
+  const kind = category.parentId ? 'subcategory' : 'category';
+  return (
+    <DeleteConfirmModal
+      title={`Delete ${categoryLabel(category)}`}
+      description={`This permanently removes the ${kind}. It's only allowed when it has no subcategories, no service items and no orders — otherwise deactivate it to hide it from customers.`}
+      onDelete={() => deleteCategory.mutateAsync(category.id)}
+      onDeactivate={() => deactivate.mutateAsync(category.id)}
+      alreadyInactive={!category.active}
+      onClose={onClose}
+    />
+  );
+}
+
+function DeleteServiceModal({ service, onClose }: { service: ServiceItemResponse; onClose: () => void }) {
+  const deleteService = useDeleteServiceItem();
+  const updateService = useUpdateServiceItem();
+  return (
+    <DeleteConfirmModal
+      title={`Delete ${service.name}`}
+      description="This permanently removes the service. It's only allowed when no order uses it and no company offers it — otherwise deactivate it to hide it from customers."
+      onDelete={() => deleteService.mutateAsync(service.id)}
+      onDeactivate={() =>
+        updateService.mutateAsync({
+          id: service.id,
+          categoryId: service.categoryId,
+          name: service.name,
+          description: service.description ?? undefined,
+          active: false,
+        })
+      }
+      alreadyInactive={!service.active}
+      onClose={onClose}
+    />
   );
 }
 
