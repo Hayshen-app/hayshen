@@ -345,6 +345,9 @@ export interface CategoryResponse {
   iconUrl: string | null;
   active: boolean;
   displayOrder: number;
+  /** Null for a top-level category; otherwise the top-level category this subcategory belongs to. */
+  parentId: number | null;
+  parentName: string | null;
 }
 
 export interface CategoryRequest {
@@ -353,6 +356,7 @@ export interface CategoryRequest {
   iconUrl?: string;
   active?: boolean;
   displayOrder?: number;
+  parentId?: number | null;
 }
 
 /** Mirrors backend catalog/dto/ServiceItemResponse. */
