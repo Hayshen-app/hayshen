@@ -457,6 +457,11 @@ function ServiceItemFormModal({ service, categoryId, categories, onClose }: Serv
               </option>
             ))}
           </select>
+          {subcategoryOptions.length === 0 && (
+            <small className="category-form__hint">
+              This category has no subcategories yet. Add one with “+ Subcategory” on the category card.
+            </small>
+          )}
         </div>
         <div className="field">
           <label htmlFor="service-name">Name</label>
