@@ -47,7 +47,27 @@ export function useDeactivateCategory() {
   const request = useAuthorizedRequest();
   const queryClient = useQueryClient();
   return useMutation({
+    mutationFn: (id: number) => request<void>(`/admin/categories/${id}/deactivate`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] }),
+  });
+}
+
+/** Safe delete: the API answers 409 with the reasons when anything still depends on the category. */
+export function useDeleteCategory() {
+  const request = useAuthorizedRequest();
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (id: number) => request<void>(`/admin/categories/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] }),
+  });
+}
+
+/** Safe delete: the API answers 409 with the reasons when orders use it or companies offer it. */
+export function useDeleteServiceItem() {
+  const request = useAuthorizedRequest();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => request<void>(`/admin/categories/services/${id}`, { method: 'DELETE' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] }),
   });
 }
